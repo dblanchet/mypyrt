@@ -18,7 +18,7 @@ camera_dir = Vect(0.0, 0.0, -1.0)
 screen_dist = 3.0  # Distance from camera to screen window.
 screen_size = Point(4.0, 3.0, 0)
 
-image_size = Point(64, 48, 0)
+image_size = Point(320, 240, 0)
 
 scene_objects = [Sphere(Point(0.0, 0.0, 0.0), 3.0)]
 
