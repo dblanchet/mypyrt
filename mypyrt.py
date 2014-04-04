@@ -20,7 +20,7 @@ screen_size = Point(4.0, 3.0, 0)
 
 image_size = Point(64, 48, 0)
 
-scene_objects = [Sphere(Point(0.0, 0.0, 0.0), 1.0)]
+scene_objects = [Sphere(Point(0.0, 0.0, 0.0), 3.0)]
 
 
 def mul(v1, v2):
