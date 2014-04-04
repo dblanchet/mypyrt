@@ -30,9 +30,9 @@ def mul(v1, v2):
 
 
 def minus(p1, p2):
-    return Vect(p2.x - p1.x,
-                p2.y - p1.y,
-                p2.z - p1.z)
+    return Vect(p1.x - p2.x,
+                p1.y - p2.y,
+                p1.z - p2.z)
 
 
 def norm(v):
@@ -78,7 +78,7 @@ def send_ray(ray):
     if d > 0:
         l = ray.direction
         o = camera_pos
-        p = Point(o.x + l.x * d, o.y + l.y * d, o.z - l.z * d)
+        p = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
 
         sp = normalize(minus(p, sphere.center))
         oc = normalize(minus(camera_pos, sphere.center))
