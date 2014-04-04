@@ -81,9 +81,9 @@ def send_ray(ray):
         p = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
 
         sp = normalize(minus(p, sphere.center))
-        oc = normalize(minus(camera_pos, sphere.center))
+        op = normalize(minus(camera_pos, p))
 
-        return [int(255 * abs(mul(sp, oc)))] * 3
+        return [int(255 * abs(mul(sp, op)))] * 3
     else:
         return [0] * 3
 
