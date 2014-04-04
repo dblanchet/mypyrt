@@ -47,6 +47,7 @@ def normalize(v):
 def sphere_intersection(line, sphere):
     o = line.origin
     l = line.direction
+
     c = sphere.center
     r = sphere.radius
 
@@ -54,21 +55,35 @@ def sphere_intersection(line, sphere):
     mul1 = mul(l, oc)
     discr = mul1 * mul1 - mul(oc, oc) + r * r
 
-    return discr >= 0
+    if discr < 0:
+        return -1
+
+    dist = - mul(l, oc) - math.sqrt(discr)
+    return dist
 
 
 def make_ray(x_scr, y_scr):
     x = screen_size.x * x_scr / image_size.x - screen_size.x / 2
     y = screen_size.y * y_scr / image_size.y - screen_size.y / 2
-    z = camera_pos.z - screen_dist
+    z = camera_pos.z + camera_dir.z * screen_dist
 
     screen_point = Point(x, y, z)
     return Line(camera_pos, normalize(minus(screen_point, camera_pos)))
 
 
 def send_ray(ray):
-    if sphere_intersection(ray, scene_objects[0]):
-        return [255] * 3
+    sphere = scene_objects[0]
+
+    d = sphere_intersection(ray, sphere)
+    if d > 0:
+        l = ray.direction
+        o = camera_pos
+        p = Point(o.x + l.x * d, o.y + l.y * d, o.z - l.z * d)
+
+        sp = normalize(minus(p, sphere.center))
+        oc = normalize(minus(camera_pos, sphere.center))
+
+        return [int(255 * abs(mul(sp, oc)))] * 3
     else:
         return [0] * 3
 
