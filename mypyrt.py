@@ -60,7 +60,7 @@ def sphere_intersection(line, sphere):
 def make_ray(x_scr, y_scr):
     x = screen_size.x * x_scr / image_size.x - screen_size.x / 2
     y = screen_size.y * y_scr / image_size.y - screen_size.y / 2
-    z = screen_dist
+    z = camera_pos.z - screen_dist
 
     screen_point = Point(x, y, z)
     return Line(camera_pos, normalize(minus(screen_point, camera_pos)))
