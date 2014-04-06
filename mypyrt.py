@@ -153,6 +153,8 @@ class Plane:
         return [int(base / (1.0 + attenuation))] * 3
 
 
+BACKGROUND_COLOR = Color(0, 0, 64)  # Dark Blue
+
 camera_pos = Point(0.0, 0.0, 10.0)
 camera_dir = Vector(0.0, 0.0, -1.0)
 screen_dist = 3.0  # Distance from camera to screen window.
@@ -163,8 +165,8 @@ image_size = Point(320, 240, 0)
 scene = [
         Sphere(Point(0.0, 0.0, 0.0), 3.0, Color(255, 255, 0)),
         Sphere(Point(-1.0, 2.0, 2.0), 1.5, Color(255, 0, 0)),
-        Sphere(Point(-4.0, -3.0, -5.0), 3.0, Color(0, 255, 128)),
-        Sphere(Point(6.0, 2.0, -6.0), 4.0, Color(0, 72, 255)),
+        Sphere(Point(-5.0, -4.0, -5.0), 3.0, Color(0, 255, 128)),
+        Sphere(Point(6.0, 3.0, -5.0), 3.0, Color(0, 72, 255)),
         Plane(Point(0.0, 4.0, 0.0), Vector(0.0, 1.0, 0.0))  # Floor
         ]
 
@@ -186,8 +188,7 @@ def send_ray(ray):
             touched.append((d, obj))
 
     if not touched:
-        return [0] * 3
-        #return [0, 127, 0]  # DEBUG
+        return BACKGROUND_COLOR
 
     touched.sort()  # Tuples are sorted by first item, then second item, etc.
 
