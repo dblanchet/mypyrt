@@ -19,6 +19,7 @@ class Point:
         if not isinstance(p, Point):
             raise ValueError('Expected a Point, got a', type(p))
 
+        # Difference between points makes a Vector.
         return Vector(self.x - p.x,
                       self.y - p.y,
                       self.z - p.z)
@@ -43,10 +44,12 @@ class Vector:
 
     def __mul__(self, o):
 
+        # If argument is a Vector, return dot product.
         if isinstance(o, Vector):
             return self._vector_mul(o)
 
         try:
+            # If argument is a num scalar, return a Vector.
             k = float(o)
             return self._const_mul(k)
         except ValueError:
@@ -55,6 +58,7 @@ class Vector:
         raise ValueError('Expected a Point or a number, got a', type(o))
 
     def __div__(self, k):
+        # Division is correct with num scalar only.
         val = float(k)  # Let conversion fail for incorrect types.
         return self * (1 / val)
 
@@ -80,6 +84,7 @@ class Sphere:
         self.color = color
 
     def intersect(self, line):
+        # http://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
         o = line.origin
         l = line.direction
 
@@ -97,6 +102,9 @@ class Sphere:
         return shortest_dist
 
     def rendered_pixel(self, point, ray):
+        # Assume light is coming from camera
+        # and modulate color intensity according
+        # to ray to surface normal angle cos.
         origin = ray.origin
 
         pc = (point - self.center).normalize()
@@ -124,6 +132,7 @@ class Plane:
         self.normal = normal
 
     def intersect(self, line):
+        # http://en.wikipedia.org/wiki/Line-plane_intersection
         o = line.origin
         l = line.direction
 
@@ -150,6 +159,8 @@ class Plane:
         else:
             base = 128
 
+        # RGB are all treated the same, making
+        # light and dark gray tiles.
         return [int(base / (1.0 + attenuation))] * 3
 
 
@@ -167,6 +178,7 @@ scene = [
         Sphere(Point(-1.0, 2.0, 2.0), 1.5, Color(255, 0, 0)),
         Sphere(Point(-5.0, -4.0, -5.0), 3.0, Color(0, 255, 128)),
         Sphere(Point(6.0, 3.0, -5.0), 3.0, Color(0, 72, 255)),
+
         Plane(Point(0.0, 4.0, 0.0), Vector(0.0, 1.0, 0.0))  # Floor
         ]
 
@@ -181,27 +193,39 @@ def make_ray(x_scr, y_scr):
 
 
 def send_ray(ray):
+
+    # Find out scene objects reach by the ray.
     touched = []
     for obj in scene:
         d = obj.intersect(ray)
+
+        # We do not care about objects
+        # behind camera.
         if d > 0:
             touched.append((d, obj))
 
     if not touched:
         return BACKGROUND_COLOR
 
-    touched.sort()  # Tuples are sorted by first item, then second item, etc.
+    # If several objects intersected,
+    # take first one.
+    #
+    # Tuples are sorted by first item, then second item, etc.
+    touched.sort()
+    d, obj = touched[0]
 
+    # Compute the point where ray and objects met.
     l = ray.direction
     o = camera_pos
-
-    d, obj = touched[0]
     p = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
 
+    # Ask touched object for a color.
     return obj.rendered_pixel(p, ray)
 
 
 def main(argv=None):
+    # Send a ray for each image pixel
+    # and find the corresponding color.
     pixels = []
     for y in range(image_size.y):
         for x in range(image_size.x):
@@ -209,6 +233,7 @@ def main(argv=None):
             color = send_ray(ray)
             pixels.extend(color)
 
+    # Write pixels to easily read file format.
     with open('result.png', 'wb') as f:
         w = png.Writer(image_size.x, image_size.y)
         w.write_array(f, pixels)
