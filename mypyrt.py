@@ -157,7 +157,7 @@ class Plane:
         if int(math.floor(point.x / 2) + math.floor(point.z / 2)) & 1:
             base = 255
         else:
-            base = 128
+            base = 64
 
         # RGB are all treated the same, making
         # light and dark gray tiles.
