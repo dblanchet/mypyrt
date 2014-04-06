@@ -12,6 +12,7 @@ Point = namedtuple('Point', 'x y z')
 Vect = namedtuple('Vect', 'x y z')
 Sphere = namedtuple('Sphere', 'center radius')
 Line = namedtuple('Line', 'origin direction')
+Plane = namedtuple('Place', 'point normal')
 
 camera_pos = Point(0.0, 0.0, 10.0)
 camera_dir = Vect(0.0, 0.0, -1.0)
@@ -23,7 +24,8 @@ image_size = Point(320, 240, 0)
 scene_objects = [
         Sphere(Point(0.0, 0.0, 0.0), 3.0),
         Sphere(Point(1.0, 2.0, 2.0), 1.5),
-        Sphere(Point(-4.0, -3.0, -5.0), 3.0)
+        Sphere(Point(-4.0, -3.0, -5.0), 3.0),
+        Plane(Point(0.0, 4.0, 0.0), Vect(0.0, 1.0, 0.0))  # Floor
         ]
 
 
@@ -66,6 +68,21 @@ def sphere_intersection(line, sphere):
     return dist
 
 
+def place_intersection(line, plane):
+    o = line.origin
+    l = line.direction
+
+    p = plane.point
+    n = plane.normal
+
+    denum = mul(l, n)
+    if denum == 0:
+        return -1
+
+    dist = mul(minus(p, o), n) / denum
+    return dist
+
+
 def make_ray(x_scr, y_scr):
     x = screen_size.x * x_scr / image_size.x - screen_size.x / 2
     y = screen_size.y * y_scr / image_size.y - screen_size.y / 2
@@ -78,7 +95,10 @@ def make_ray(x_scr, y_scr):
 def send_ray(ray):
     touched = []
     for obj in scene_objects:
-        d = sphere_intersection(ray, obj)
+        if isinstance(obj, Sphere):
+            d = sphere_intersection(ray, obj)
+        if isinstance(obj, Plane):
+            d = place_intersection(ray, obj)
         if d > 0:
             touched.append((d, obj))
 
@@ -94,10 +114,18 @@ def send_ray(ray):
     d, obj = touched[0]
     p = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
 
-    sp = normalize(minus(p, obj.center))
-    op = normalize(minus(o, p))
+    if isinstance(obj, Sphere):
+        sp = normalize(minus(p, obj.center))
+        op = normalize(minus(o, p))
 
-    return [int(255 * abs(mul(sp, op)))] * 3
+        return [int(255 * abs(mul(sp, op)))] * 3
+
+    if isinstance(obj, Plane):
+        if p.z > 0:
+            attenuation = 0.0
+        else:
+            attenuation = - p.z / 50.0
+        return [int(255 / (1.0 + attenuation))] * 3
 
 
 def main(argv=None):
