@@ -76,7 +76,7 @@ screen_size = Point(4.0, 3.0, 0)
 
 image_size = Point(320, 240, 0)
 
-scene_objects = [
+scene = [
         Sphere(Point(0.0, 0.0, 0.0), 3.0),
         Sphere(Point(1.0, 2.0, 2.0), 1.5),
         Sphere(Point(-4.0, -3.0, -5.0), 3.0),
@@ -128,7 +128,7 @@ def make_ray(x_scr, y_scr):
 
 def send_ray(ray):
     touched = []
-    for obj in scene_objects:
+    for obj in scene:
         if isinstance(obj, Sphere):
             d = sphere_intersection(ray, obj)
         if isinstance(obj, Plane):
