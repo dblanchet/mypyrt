@@ -19,18 +19,58 @@ class Point:
         if not isinstance(p, Point):
             raise ValueError('Expected a Point, got a', type(p))
 
-        return Vect(self.x - p.x,
-                    self.y - p.y,
-                    self.z - p.z)
+        return Vector(self.x - p.x,
+                      self.y - p.y,
+                      self.z - p.z)
 
 
-Vect = namedtuple('Vect', 'x y z')
+class Vector:
+
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def _vector_mul(self, v):
+        return   self.x * v.x \
+               + self.y * v.y \
+               + self.z * v.z
+
+    def _const_mul(self, k):
+        return Vector(k * self.x,
+                      k * self.y,
+                      k * self.z)
+
+    def __mul__(self, o):
+
+        if isinstance(o, Vector):
+            return self._vector_mul(o)
+
+        try:
+            k = float(o)
+            return self._const_mul(k)
+        except ValueError:
+            pass
+
+        raise ValueError('Expected a Point or a number, got a', type(o))
+
+    def __div__(self, k):
+        val = float(k)  # Let conversion fail for incorrect types.
+        return self * (1 / val)
+
+    def norm(self):
+        return math.sqrt(self * self)
+
+    def normalize(self):
+        return self / self.norm()
+
+
 Sphere = namedtuple('Sphere', 'center radius')
 Line = namedtuple('Line', 'origin direction')
 Plane = namedtuple('Place', 'point normal')
 
 camera_pos = Point(0.0, 0.0, 10.0)
-camera_dir = Vect(0.0, 0.0, -1.0)
+camera_dir = Vector(0.0, 0.0, -1.0)
 screen_dist = 3.0  # Distance from camera to screen window.
 screen_size = Point(4.0, 3.0, 0)
 
@@ -40,23 +80,8 @@ scene_objects = [
         Sphere(Point(0.0, 0.0, 0.0), 3.0),
         Sphere(Point(1.0, 2.0, 2.0), 1.5),
         Sphere(Point(-4.0, -3.0, -5.0), 3.0),
-        Plane(Point(0.0, 4.0, 0.0), Vect(0.0, 1.0, 0.0))  # Floor
+        Plane(Point(0.0, 4.0, 0.0), Vector(0.0, 1.0, 0.0))  # Floor
         ]
-
-
-def mul(v1, v2):
-    return   v1.x * v2.x \
-           + v1.y * v2.y \
-           + v1.z * v2.z
-
-
-def norm(v):
-    return math.sqrt(mul(v, v))
-
-
-def normalize(v):
-    n = norm(v)
-    return Vect(v.x / n, v.y / n, v.z / n)
 
 
 def sphere_intersection(line, sphere):
@@ -67,13 +92,13 @@ def sphere_intersection(line, sphere):
     r = sphere.radius
 
     oc = o - c
-    mul1 = mul(l, oc)
-    discr = mul1 * mul1 - mul(oc, oc) + r * r
+    mul1 = l * oc
+    discr = mul1 * mul1 - oc * oc + r * r
 
     if discr < 0:
         return -1
 
-    dist = - mul(l, oc) - math.sqrt(discr)
+    dist = - (l * oc) - math.sqrt(discr)
     return dist
 
 
@@ -84,11 +109,11 @@ def place_intersection(line, plane):
     p = plane.point
     n = plane.normal
 
-    denum = mul(l, n)
+    denum = l * n
     if denum == 0:
         return -1
 
-    dist = mul(p - o, n) / denum
+    dist = (p - o) * n / denum
     return dist
 
 
@@ -98,7 +123,7 @@ def make_ray(x_scr, y_scr):
     z = camera_pos.z + camera_dir.z * screen_dist
 
     screen_point = Point(x, y, z)
-    return Line(camera_pos, normalize(screen_point - camera_pos))
+    return Line(camera_pos, (screen_point - camera_pos).normalize())
 
 
 def send_ray(ray):
@@ -124,10 +149,10 @@ def send_ray(ray):
     p = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
 
     if isinstance(obj, Sphere):
-        sp = normalize(p - obj.center)
-        op = normalize(o - p)
+        sp = (p - obj.center).normalize()
+        op = (o - p).normalize()
 
-        return [int(255 * abs(mul(sp, op)))] * 3
+        return [int(255 * abs(sp * op))] * 3
 
     if isinstance(obj, Plane):
         if p.z > 0:
