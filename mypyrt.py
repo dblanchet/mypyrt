@@ -20,7 +20,11 @@ screen_size = Point(4.0, 3.0, 0)
 
 image_size = Point(320, 240, 0)
 
-scene_objects = [Sphere(Point(0.0, 0.0, 0.0), 3.0)]
+scene_objects = [
+        Sphere(Point(0.0, 0.0, 0.0), 3.0),
+        Sphere(Point(1.0, 2.0, 2.0), 1.5),
+        Sphere(Point(-4.0, -3.0, -5.0), 3.0)
+        ]
 
 
 def mul(v1, v2):
@@ -72,20 +76,28 @@ def make_ray(x_scr, y_scr):
 
 
 def send_ray(ray):
-    sphere = scene_objects[0]
+    touched = []
+    for obj in scene_objects:
+        d = sphere_intersection(ray, obj)
+        if d > 0:
+            touched.append((d, obj))
 
-    d = sphere_intersection(ray, sphere)
-    if d > 0:
-        l = ray.direction
-        o = camera_pos
-        p = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
-
-        sp = normalize(minus(p, sphere.center))
-        op = normalize(minus(camera_pos, p))
-
-        return [int(255 * abs(mul(sp, op)))] * 3
-    else:
+    if not touched:
         return [0] * 3
+        #return [0, 127, 0]  # DEBUG
+
+    touched.sort()  # Tuples are sorted by first item, then second item, etc.
+
+    l = ray.direction
+    o = camera_pos
+
+    d, obj = touched[0]
+    p = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
+
+    sp = normalize(minus(p, obj.center))
+    op = normalize(minus(o, p))
+
+    return [int(255 * abs(mul(sp, op)))] * 3
 
 
 def main(argv=None):
