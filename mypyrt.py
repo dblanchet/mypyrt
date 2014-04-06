@@ -66,16 +66,18 @@ class Vector:
 
 
 Line = namedtuple('Line', 'origin direction')
+Color = namedtuple('Color', 'red green blue')
 
 
 class Sphere:
 
-    def __init__(self, center, radius):
+    def __init__(self, center, radius, color=Color(255, 255, 255)):
         if not isinstance(center, Point):
             raise ValueError('Expected a Point as first arg, got a',
                     type(center))
         self.center = center
         self.radius = float(radius)
+        self.color = color
 
     def intersect(self, line):
         o = line.origin
@@ -99,8 +101,12 @@ class Sphere:
 
         pc = (point - self.center).normalize()
         op = (origin - point).normalize()
+        coeff = abs(pc * op)
 
-        return [int(255 * abs(pc * op))] * 3
+        c = self.color
+        return [int(c.red * coeff),
+                int(c.green * coeff),
+                int(c.blue * coeff)]
 
 
 class Plane:
@@ -155,9 +161,10 @@ screen_size = Point(4.0, 3.0, 0)
 image_size = Point(320, 240, 0)
 
 scene = [
-        Sphere(Point(0.0, 0.0, 0.0), 3.0),
-        Sphere(Point(1.0, 2.0, 2.0), 1.5),
-        Sphere(Point(-4.0, -3.0, -5.0), 3.0),
+        Sphere(Point(0.0, 0.0, 0.0), 3.0, Color(255, 255, 0)),
+        Sphere(Point(-1.0, 2.0, 2.0), 1.5, Color(255, 0, 0)),
+        Sphere(Point(-4.0, -3.0, -5.0), 3.0, Color(0, 255, 128)),
+        Sphere(Point(6.0, 2.0, -6.0), 4.0, Color(0, 72, 255)),
         Plane(Point(0.0, 4.0, 0.0), Vector(0.0, 1.0, 0.0))  # Floor
         ]
 
