@@ -8,7 +8,22 @@ from collections import namedtuple
 import png
 
 
-Point = namedtuple('Point', 'x y z')
+class Point:
+
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __sub__(self, p):
+        if not isinstance(p, Point):
+            raise ValueError('Expected a Point, got a', type(p))
+
+        return Vect(self.x - p.x,
+                    self.y - p.y,
+                    self.z - p.z)
+
+
 Vect = namedtuple('Vect', 'x y z')
 Sphere = namedtuple('Sphere', 'center radius')
 Line = namedtuple('Line', 'origin direction')
@@ -35,12 +50,6 @@ def mul(v1, v2):
            + v1.z * v2.z
 
 
-def minus(p1, p2):
-    return Vect(p1.x - p2.x,
-                p1.y - p2.y,
-                p1.z - p2.z)
-
-
 def norm(v):
     return math.sqrt(mul(v, v))
 
@@ -57,7 +66,7 @@ def sphere_intersection(line, sphere):
     c = sphere.center
     r = sphere.radius
 
-    oc = minus(o, c)
+    oc = o - c
     mul1 = mul(l, oc)
     discr = mul1 * mul1 - mul(oc, oc) + r * r
 
@@ -79,7 +88,7 @@ def place_intersection(line, plane):
     if denum == 0:
         return -1
 
-    dist = mul(minus(p, o), n) / denum
+    dist = mul(p - o, n) / denum
     return dist
 
 
@@ -89,7 +98,7 @@ def make_ray(x_scr, y_scr):
     z = camera_pos.z + camera_dir.z * screen_dist
 
     screen_point = Point(x, y, z)
-    return Line(camera_pos, normalize(minus(screen_point, camera_pos)))
+    return Line(camera_pos, normalize(screen_point - camera_pos))
 
 
 def send_ray(ray):
@@ -115,8 +124,8 @@ def send_ray(ray):
     p = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
 
     if isinstance(obj, Sphere):
-        sp = normalize(minus(p, obj.center))
-        op = normalize(minus(o, p))
+        sp = normalize(p - obj.center)
+        op = normalize(o - p)
 
         return [int(255 * abs(mul(sp, op)))] * 3
 
