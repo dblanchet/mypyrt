@@ -65,9 +65,87 @@ class Vector:
         return self / self.norm()
 
 
-Sphere = namedtuple('Sphere', 'center radius')
 Line = namedtuple('Line', 'origin direction')
-Plane = namedtuple('Place', 'point normal')
+
+
+class Sphere:
+
+    def __init__(self, center, radius):
+        if not isinstance(center, Point):
+            raise ValueError('Expected a Point as first arg, got a',
+                    type(center))
+        self.center = center
+        self.radius = float(radius)
+
+    def intersect(self, line):
+        o = line.origin
+        l = line.direction
+
+        c = self.center
+        r = self.radius
+
+        oc = o - c
+        mul1 = l * oc
+        discr = mul1 * mul1 - oc * oc + r * r
+
+        if discr < 0:
+            return -1
+
+        shortest_dist = - (l * oc) - math.sqrt(discr)
+        return shortest_dist
+
+    def rendered_pixel(self, point, ray):
+        origin = ray.origin
+
+        pc = (point - self.center).normalize()
+        op = (origin - point).normalize()
+
+        return [int(255 * abs(pc * op))] * 3
+
+
+class Plane:
+
+    def __init__(self, point, normal):
+        if not isinstance(point, Point):
+            raise ValueError('Expected Point as first arg, got',
+                    type(point))
+
+        if not isinstance(normal, Vector):
+            raise ValueError('Expected Vector as second arg, got',
+                    type(normal))
+
+        self.point = point
+        self.normal = normal
+
+    def intersect(self, line):
+        o = line.origin
+        l = line.direction
+
+        p = self.point
+        n = self.normal
+
+        denum = l * n
+        if denum == 0:
+            return -1
+
+        dist = (p - o) * n / denum
+        return dist
+
+    def rendered_pixel(self, point, ray):
+        # Plane is darker with the distance.
+        if point.z > 0:
+            attenuation = 0.0
+        else:
+            attenuation = - point.z / 50.0
+
+        # Tiled rendering.
+        if int(math.floor(point.x / 2) + math.floor(point.z / 2)) & 1:
+            base = 255
+        else:
+            base = 128
+
+        return [int(base / (1.0 + attenuation))] * 3
+
 
 camera_pos = Point(0.0, 0.0, 10.0)
 camera_dir = Vector(0.0, 0.0, -1.0)
@@ -84,39 +162,6 @@ scene = [
         ]
 
 
-def sphere_intersection(line, sphere):
-    o = line.origin
-    l = line.direction
-
-    c = sphere.center
-    r = sphere.radius
-
-    oc = o - c
-    mul1 = l * oc
-    discr = mul1 * mul1 - oc * oc + r * r
-
-    if discr < 0:
-        return -1
-
-    dist = - (l * oc) - math.sqrt(discr)
-    return dist
-
-
-def place_intersection(line, plane):
-    o = line.origin
-    l = line.direction
-
-    p = plane.point
-    n = plane.normal
-
-    denum = l * n
-    if denum == 0:
-        return -1
-
-    dist = (p - o) * n / denum
-    return dist
-
-
 def make_ray(x_scr, y_scr):
     x = screen_size.x * x_scr / image_size.x - screen_size.x / 2
     y = screen_size.y * y_scr / image_size.y - screen_size.y / 2
@@ -129,10 +174,7 @@ def make_ray(x_scr, y_scr):
 def send_ray(ray):
     touched = []
     for obj in scene:
-        if isinstance(obj, Sphere):
-            d = sphere_intersection(ray, obj)
-        if isinstance(obj, Plane):
-            d = place_intersection(ray, obj)
+        d = obj.intersect(ray)
         if d > 0:
             touched.append((d, obj))
 
@@ -148,22 +190,7 @@ def send_ray(ray):
     d, obj = touched[0]
     p = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
 
-    if isinstance(obj, Sphere):
-        sp = (p - obj.center).normalize()
-        op = (o - p).normalize()
-
-        return [int(255 * abs(sp * op))] * 3
-
-    if isinstance(obj, Plane):
-        if p.z > 0:
-            attenuation = 0.0
-        else:
-            attenuation = - p.z / 50.0
-        if int(math.floor(p.x / 2) + math.floor(p.z / 2)) & 1:
-            base = 255
-        else:
-            base = 128
-        return [int(base / (1.0 + attenuation))] * 3
+    return obj.rendered_pixel(p, ray)
 
 
 def main(argv=None):
