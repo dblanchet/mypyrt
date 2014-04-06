@@ -125,7 +125,11 @@ def send_ray(ray):
             attenuation = 0.0
         else:
             attenuation = - p.z / 50.0
-        return [int(255 / (1.0 + attenuation))] * 3
+        if int(math.floor(p.x / 2) + math.floor(p.z / 2)) & 1:
+            base = 255
+        else:
+            base = 128
+        return [int(base / (1.0 + attenuation))] * 3
 
 
 def main(argv=None):
