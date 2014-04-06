@@ -91,16 +91,14 @@ def send_ray(ray):
 def main(argv=None):
     pixels = []
     for y in range(image_size.y):
-        line = []
         for x in range(image_size.x):
             ray = make_ray(x, y)
             color = send_ray(ray)
-            line.extend(color)
-        pixels.append(line)
+            pixels.extend(color)
 
     with open('result.png', 'wb') as f:
         w = png.Writer(image_size.x, image_size.y)
-        w.write(f, pixels)
+        w.write_array(f, pixels)
 
 
 if __name__ == '__main__':
