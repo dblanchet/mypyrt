@@ -60,6 +60,14 @@ class Vector:
     def __rmul__(self, o):
         return self.__mul__(o)
 
+    def __add__(self, o):
+        if not isinstance(o, Vector):
+            raise ValueError('Expected a Vector, got a', type(o))
+
+        return Vector(self.x + o.x,
+                      self.y + o.y,
+                      self.z + o.z)
+
     def __div__(self, k):
         # Division is correct with num scalar only.
         val = float(k)  # Let conversion fail for incorrect types.
