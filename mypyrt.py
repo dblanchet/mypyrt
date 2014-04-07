@@ -143,13 +143,19 @@ class ReflectingSphere(Sphere):
     def rendered_pixel(self, point, ray):
         # Coming ray is reflected according to
         # sphere surface normal and color is taken
-        # from touched object.
+        # from touched object mixed with Sphere's
+        # own color.
 
         normal = (point - self.center).normalize()
         reflect = ray.direction.reflected(normal)
 
         reflected = Line(point, reflect)
-        return send_ray(reflected)
+        r, g, b = send_ray(reflected)
+
+        c = self.color
+        return [int(r * c.red / 255),
+                int(g * c.green / 255),
+                int(b * c.blue / 255)]
 
 
 class Plane:
