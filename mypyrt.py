@@ -57,6 +57,9 @@ class Vector:
 
         raise ValueError('Expected a Point or a number, got a', type(o))
 
+    def __rmul__(self, o):
+        return self.__mul__(o)
+
     def __div__(self, k):
         # Division is correct with num scalar only.
         val = float(k)  # Let conversion fail for incorrect types.
