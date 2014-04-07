@@ -79,6 +79,15 @@ class Vector:
     def normalize(self):
         return self / self.norm()
 
+    def reflected(self, normal):
+        if not isinstance(normal, Vector):
+            raise ValueError('Expected a Vector, got a', type(normal))
+
+        # http://www.3dkingdoms.com/weekly/weekly.php?a=2
+        #
+        # Return inverted symetrical based on arg vector.
+        return (- 2 * (self * normal)) * normal + self
+
 
 Line = namedtuple('Line', 'origin direction')
 Color = namedtuple('Color', 'red green blue')
