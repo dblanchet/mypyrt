@@ -125,6 +125,7 @@ class Sphere:
         # Assume light is coming from camera
         # and modulate color intensity according
         # to ray to surface normal angle cos.
+
         origin = ray.origin
 
         pc = (point - self.center).normalize()
@@ -135,6 +136,20 @@ class Sphere:
         return [int(c.red * coeff),
                 int(c.green * coeff),
                 int(c.blue * coeff)]
+
+
+class ReflectingSphere(Sphere):
+
+    def rendered_pixel(self, point, ray):
+        # Coming ray is reflected according to
+        # sphere surface normal and color is taken
+        # from touched object.
+
+        normal = (point - self.center).normalize()
+        reflect = ray.direction.reflected(normal)
+
+        reflected = Line(point, reflect)
+        return send_ray(reflected)
 
 
 class Plane:
@@ -196,7 +211,7 @@ image_size = Point(320, 240, 0)
 scene = [
         Sphere(Point(0.0, 0.0, 0.0), 3.0, Color(255, 255, 0)),
         Sphere(Point(-1.0, 2.0, 2.0), 1.5, Color(255, 0, 0)),
-        Sphere(Point(-5.0, -4.0, -5.0), 3.0, Color(0, 255, 128)),
+        ReflectingSphere(Point(-5.0, -4.0, -5.0), 3.0, Color(0, 255, 128)),
         Sphere(Point(6.0, 3.0, -5.0), 3.0, Color(0, 72, 255)),
 
         Plane(Point(0.0, 4.0, 0.0), Vector(0.0, 1.0, 0.0))  # Floor
