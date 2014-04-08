@@ -91,6 +91,7 @@ class Vector:
 
 Line = namedtuple('Line', 'origin direction')
 Color = namedtuple('Color', 'red green blue')
+Light = namedtuple('Light', 'position')
 
 
 class Sphere:
@@ -214,7 +215,10 @@ screen_size = Point(4.0, 3.0, 0)
 
 image_size = Point(320, 240, 0)
 
-scene = [
+
+# Scene setup.
+Scene = namedtuple('Scene', 'objects lights')
+objects = [
         Sphere(Point(0.0, 0.0, 0.0), 3.0, Color(255, 255, 0)),
         Sphere(Point(-1.0, 2.0, 2.0), 1.5, Color(255, 0, 0)),
         ReflectingSphere(Point(-5.0, -4.0, -5.0), 3.0, Color(0, 255, 128)),
@@ -222,6 +226,8 @@ scene = [
 
         Plane(Point(0.0, 4.0, 0.0), Vector(0.0, 1.0, 0.0))  # Floor
         ]
+lights = [Light(Point(-10.0, -10.0, 3.0))]
+scene = Scene(objects, lights)
 
 
 def make_ray(x_scr, y_scr):
@@ -237,7 +243,7 @@ def send_ray(ray):
 
     # Find out scene objects reach by the ray.
     touched = []
-    for obj in scene:
+    for obj in scene.objects:
         d = obj.intersect(ray)
 
         # We do not care about objects
