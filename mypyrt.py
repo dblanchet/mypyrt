@@ -208,12 +208,29 @@ class Plane:
 
 BACKGROUND_COLOR = Color(0, 0, 64)  # Dark Blue
 
-camera_pos = Point(0.0, 0.0, 10.0)
-camera_dir = Vector(0.0, 0.0, -1.0)
-screen_dist = 3.0  # Distance from camera to screen window.
-screen_size = Point(4.0, 3.0, 0)
 
-image_size = Point(320, 240, 0)
+class Camera:
+
+    def __init__(self, position, direction, screen_dist, screen_size):
+        self.position = position
+        self.direction = direction
+        self.screen_dist = screen_dist
+        self.screen_size = screen_size
+
+    def make_primary_ray(self, x_scr, y_scr):
+        x = self.screen_size.x * x_scr / image_size.x - self.screen_size.x / 2
+        y = self.screen_size.y * y_scr / image_size.y - self.screen_size.y / 2
+        z = self.position.z + self.direction.z * self.screen_dist
+
+        screen_point = Point(x, y, z)
+        ray_dir = (screen_point - camera.position).normalize()
+        return Line(camera.position, ray_dir)
+
+camera = Camera(
+        Point(0.0, 0.0, 10.0),
+        Vector(0.0, 0.0, -1.0),
+        3.0,  # Distance from camera to screen window.
+        Point(4.0, 3.0, 0))
 
 
 # Scene setup.
@@ -230,13 +247,8 @@ lights = [Light(Point(-10.0, -10.0, 3.0))]
 scene = Scene(objects, lights)
 
 
-def make_ray(x_scr, y_scr):
-    x = screen_size.x * x_scr / image_size.x - screen_size.x / 2
-    y = screen_size.y * y_scr / image_size.y - screen_size.y / 2
-    z = camera_pos.z + camera_dir.z * screen_dist
-
-    screen_point = Point(x, y, z)
-    return Line(camera_pos, (screen_point - camera_pos).normalize())
+# Image setup.
+image_size = Point(320, 240, 0)
 
 
 def send_ray(ray):
@@ -263,7 +275,7 @@ def send_ray(ray):
 
     # Compute the point where ray and objects met.
     l = ray.direction
-    o = camera_pos
+    o = camera.position
     p = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
 
     # Ask touched object for a color.
@@ -276,7 +288,7 @@ def main(argv=None):
     pixels = []
     for y in range(image_size.y):
         for x in range(image_size.x):
-            ray = make_ray(x, y)
+            ray = camera.make_primary_ray(x, y)
             color = send_ray(ray)
             pixels.extend(color)
 
