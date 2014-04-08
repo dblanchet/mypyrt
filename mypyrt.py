@@ -94,7 +94,51 @@ Color = namedtuple('Color', 'red green blue')
 Light = namedtuple('Light', 'position')
 
 
-class Sphere:
+class SceneObject:
+
+    def visible_lights(self, point):
+        visible = []
+
+        for light in scene.lights:
+            ray_dir = light.position - point
+
+            # Own shadow.
+            #
+            # Surface normal at considered point is
+            # not oriented towards this light.
+            if self.normal_at(point) * ray_dir < 0:
+                continue
+
+            # Cast shadow.
+            #
+            # Check if light source is visible from
+            # considered point.
+            ray = Line(point, ray_dir.normalize())
+            touched = touched_objects(ray, exclude=[self])
+
+            if touched:
+
+                # Computed distance from point to light source.
+                light_dist = ray_dir.norm()
+
+                # Find closest object distance.
+                touched.sort()
+                obj_dist, _ = touched[0]
+
+                # Check if the closest object stands
+                # between point and light source.
+                if 0 < obj_dist < light_dist:
+                    continue
+
+            visible.append(light)
+
+        return visible
+
+    def normal_at(self, point):
+        return None  # Trigger an exception if not overridden.
+
+
+class Sphere(SceneObject):
 
     def __init__(self, center, radius, color=Color(255, 255, 255)):
         if not isinstance(center, Point):
@@ -103,6 +147,9 @@ class Sphere:
         self.center = center
         self.radius = float(radius)
         self.color = color
+
+    def normal_at(self, point):
+        return (point - self.center).normalize()
 
     def intersect(self, line):
         # http://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
@@ -123,16 +170,25 @@ class Sphere:
         return shortest_dist
 
     def rendered_pixel(self, point, ray):
-        # Assume light is coming from camera
-        # and modulate color intensity according
-        # to ray to surface normal angle cos.
 
-        origin = ray.origin
+        # Change brightness according to visible lights.
+        lights = self.visible_lights(point)
 
-        pc = (point - self.center).normalize()
-        op = (origin - point).normalize()
-        coeff = abs(pc * op)
+        if len(lights) > 0:
+            # Take first light source only.
+            light = lights[0]
 
+            # Change brightness according to ray
+            # to normal angle.
+            light_dir = (light.position - point).normalize()
+            attenuation = abs(light_dir * self.normal_at(point))
+            coeff = AMBIANT_LIGHT + (255 - AMBIANT_LIGHT) * attenuation
+        else:
+            coeff = AMBIANT_LIGHT
+
+        coeff /= 255.0
+
+        # Apply brightness variation to sphere color.
         c = self.color
         return [int(c.red * coeff),
                 int(c.green * coeff),
@@ -147,11 +203,10 @@ class ReflectingSphere(Sphere):
         # from touched object mixed with Sphere's
         # own color.
 
-        normal = (point - self.center).normalize()
-        reflect = ray.direction.reflected(normal)
+        reflect = ray.direction.reflected(self.normal_at(point))
 
         reflected = Line(point, reflect)
-        r, g, b = send_ray(reflected)
+        r, g, b = send_ray(reflected, exclude=[self])
 
         c = self.color
         return [int(r * c.red / 255),
@@ -159,7 +214,7 @@ class ReflectingSphere(Sphere):
                 int(b * c.blue / 255)]
 
 
-class Plane:
+class Plane(SceneObject):
 
     def __init__(self, point, normal):
         if not isinstance(point, Point):
@@ -172,6 +227,9 @@ class Plane:
 
         self.point = point
         self.normal = normal
+
+    def normal_at(self, point):
+        return self.normal
 
     def intersect(self, line):
         # http://en.wikipedia.org/wiki/Line-plane_intersection
@@ -201,12 +259,18 @@ class Plane:
         else:
             base = 64
 
+        # Change brightness according to visible lights.
+        lights = self.visible_lights(point)
+        coeff = AMBIANT_LIGHT + (255 - AMBIANT_LIGHT) * len(lights)
+        coeff /= 255.0
+
         # RGB are all treated the same, making
         # light and dark gray tiles.
-        return [int(base / (1.0 + attenuation))] * 3
+        return [int(base / (1.0 + attenuation) * coeff)] * 3
 
 
-BACKGROUND_COLOR = Color(0, 0, 64)  # Dark Blue
+AMBIANT_LIGHT = 64
+BACKGROUND_COLOR = Color(0, 0, AMBIANT_LIGHT)  # Dark Blue
 
 
 class Camera:
@@ -238,12 +302,12 @@ Scene = namedtuple('Scene', 'objects lights')
 objects = [
         Sphere(Point(0.0, 0.0, 0.0), 3.0, Color(255, 255, 0)),
         Sphere(Point(-1.0, 2.0, 2.0), 1.5, Color(255, 0, 0)),
-        ReflectingSphere(Point(-5.0, -4.0, -5.0), 3.0, Color(0, 255, 128)),
-        Sphere(Point(6.0, 3.0, -5.0), 3.0, Color(0, 72, 255)),
+        ReflectingSphere(Point(-6.0, -4.0, -3.0), 3.0, Color(0, 255, 128)),
+        Sphere(Point(8.0, 2.0, -5.0), 3.0, Color(0, 72, 255)),
 
-        Plane(Point(0.0, 4.0, 0.0), Vector(0.0, 1.0, 0.0))  # Floor
+        Plane(Point(0.0, 4.0, 0.0), Vector(0.0, -1.0, 0.0))  # Floor
         ]
-lights = [Light(Point(-10.0, -10.0, 3.0))]
+lights = [Light(Point(-5.0, -10.0, 10.0))]
 scene = Scene(objects, lights)
 
 
@@ -251,11 +315,18 @@ scene = Scene(objects, lights)
 image_size = Point(320, 240, 0)
 
 
-def send_ray(ray):
 
-    # Find out scene objects reach by the ray.
+def touched_objects(ray, exclude=None):
     touched = []
+
     for obj in scene.objects:
+
+        # We may want to exclude objects:
+        # when computing cast shadows, we want to
+        # exclude current illuminated object.
+        if exclude is not None and obj in exclude:
+            continue
+
         d = obj.intersect(ray)
 
         # We do not care about objects
@@ -263,6 +334,13 @@ def send_ray(ray):
         if d > 0:
             touched.append((d, obj))
 
+    return touched
+
+
+def send_ray(ray, exclude=None):
+
+    # Find out scene objects reach by the ray.
+    touched = touched_objects(ray, exclude)
     if not touched:
         return BACKGROUND_COLOR
 
