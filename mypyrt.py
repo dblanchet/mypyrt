@@ -97,6 +97,8 @@ Light = namedtuple('Light', 'position')
 class SceneObject:
 
     def visible_lights(self, point):
+        # Return list of scene lights that are directly
+        # in light of sight from the given object point.
         visible = []
 
         for light in scene.lights:
@@ -104,8 +106,8 @@ class SceneObject:
 
             # Own shadow.
             #
-            # Surface normal at considered point is
-            # not oriented towards this light.
+            # Check if surface normal at given point
+            # is oriented towards this light.
             if self.normal_at(point) * ray_dir < 0:
                 continue
 
@@ -182,6 +184,7 @@ class Sphere(SceneObject):
             # to normal angle.
             light_dir = (light.position - point).normalize()
             attenuation = abs(light_dir * self.normal_at(point))
+
             coeff = AMBIANT_LIGHT + (255 - AMBIANT_LIGHT) * attenuation
         else:
             coeff = AMBIANT_LIGHT
@@ -203,9 +206,9 @@ class ReflectingSphere(Sphere):
         # from touched object mixed with Sphere's
         # own color.
 
-        reflect = ray.direction.reflected(self.normal_at(point))
+        reflect_dir = ray.direction.reflected(self.normal_at(point))
 
-        reflected = Line(point, reflect)
+        reflected = Line(point, reflect_dir)
         r, g, b = send_ray(reflected, exclude=[self])
 
         c = self.color
@@ -354,10 +357,10 @@ def send_ray(ray, exclude=None):
     # Compute the point where ray and objects met.
     l = ray.direction
     o = camera.position
-    p = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
+    point = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
 
     # Ask touched object for a color.
-    return obj.rendered_pixel(p, ray)
+    return obj.rendered_pixel(point, ray)
 
 
 def main(argv=None):
