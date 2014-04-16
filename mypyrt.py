@@ -5,6 +5,8 @@ import math
 
 from collections import namedtuple
 
+import multiprocessing
+
 import png
 
 
@@ -315,8 +317,7 @@ scene = Scene(objects, lights)
 
 
 # Image setup.
-image_size = Point(320, 240, 0)
-
+image_size = Point(1024, 768, 0)
 
 
 def touched_objects(ray, exclude=None):
@@ -363,20 +364,33 @@ def send_ray(ray, exclude=None):
     return obj.rendered_pixel(point, ray)
 
 
-def main(argv=None):
+def render_line(y):
+    line = []
+
     # Send a ray for each image pixel
     # and find the corresponding color.
-    pixels = []
-    for y in range(image_size.y):
-        for x in range(image_size.x):
-            ray = camera.make_primary_ray(x, y)
-            color = send_ray(ray)
-            pixels.extend(color)
+    for x in range(image_size.x):
+        ray = camera.make_primary_ray(x, y)
+        color = send_ray(ray)
+        line.extend(color)
+
+    return line
+
+
+def main(argv=None):
+
+    # Distribute line rendering over available CPUs.
+    pool = multiprocessing.Pool(processes=1)
+    lines = pool.map(render_line, range(image_size.y))
+    pool.close()
+    pool.join()
+    # Uncomment this line for mone-process rendering.
+    #lines = map(render_line, range(image_size.y))
 
     # Write pixels to easily read file format.
     with open('result.png', 'wb') as f:
         w = png.Writer(image_size.x, image_size.y)
-        w.write_array(f, pixels)
+        w.write(f, lines)
 
 
 if __name__ == '__main__':
