@@ -288,7 +288,7 @@ class Camera:
 
     def make_primary_ray(self, x_scr, y_scr):
         x = self.screen_size.x * x_scr / image_size.x - self.screen_size.x / 2
-        y = self.screen_size.y * y_scr / image_size.y - self.screen_size.y / 2
+        y = - self.screen_size.y * y_scr / image_size.y + self.screen_size.y / 2
         z = self.position.z + self.direction.z * self.screen_dist
 
         screen_point = Point(x, y, z)
@@ -304,15 +304,16 @@ camera = Camera(
 
 # Scene setup.
 Scene = namedtuple('Scene', 'objects lights')
-objects = [
-        Sphere(Point(0.0, 0.0, 0.0), 3.0, Color(255, 255, 0)),
-        Sphere(Point(-1.0, 2.0, 2.0), 1.5, Color(255, 0, 0)),
-        ReflectingSphere(Point(-6.0, -4.0, -3.0), 3.0, Color(0, 255, 128)),
-        Sphere(Point(8.0, 2.0, -5.0), 3.0, Color(0, 72, 255)),
 
-        Plane(Point(0.0, 4.0, 0.0), Vector(0.0, -1.0, 0.0))  # Floor
-        ]
-lights = [Light(Point(-5.0, -10.0, 10.0))]
+yellowSphere = Sphere(Point(0.0, 0.0, 0.0), 3.0, Color(255, 255, 0))
+redSphere = Sphere(Point(-1.0, -2.0, 2.0), 1.5, Color(255, 0, 0))
+greenSphere = ReflectingSphere(Point(-6.0, 4.0, -3.0), 3.0, Color(0, 255, 128))
+blueSphere = Sphere(Point(8.0, -2.0, -5.0), 3.0, Color(0, 72, 255))
+tiledFloor = Plane(Point(0.0, -4.0, 0.0), Vector(0.0, 1.0, 0.0))
+
+objects = [yellowSphere, redSphere, greenSphere, blueSphere, tiledFloor]
+lights = [Light(Point(-5.0, 10.0, 10.0))]
+
 scene = Scene(objects, lights)
 
 
