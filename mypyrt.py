@@ -6,6 +6,7 @@ import math
 from collections import namedtuple
 
 import multiprocessing
+from time import time
 
 import png
 
@@ -380,13 +381,33 @@ def render_line(y):
 
 def main(argv=None):
 
-    # Distribute line rendering over available CPUs.
-    pool = multiprocessing.Pool(processes=1)
-    lines = pool.map(render_line, range(image_size.y))
-    pool.close()
-    pool.join()
-    # Uncomment this line for mone-process rendering.
-    #lines = map(render_line, range(image_size.y))
+    subprocesses = int(argv[1]) if len(argv) > 1 else None
+
+    # Compute pixel colors.
+    start = time()  # Take a time reference before.
+
+    if subprocesses == 0:
+        # Use current process for line rendering.
+        lines = map(render_line, range(image_size.y))
+    else:
+        # Distribute line rendering over available CPUs.
+        pool = multiprocessing.Pool(processes=subprocesses)
+        lines = pool.map(render_line, range(image_size.y))
+        pool.close()
+        pool.join()
+
+        # Doc says multiprocessing defaults to machine CPU count.
+        if subprocesses is None:
+            subprocesses = multiprocessing.cpu_count()
+
+    # Print timing information.
+    elapsed = time() - start
+    px_count = image_size.x * image_size.y
+    proc_count = subprocesses if subprocesses > 0 else 1
+    print '%d pixels with %d subprocesses in %d seconds ' \
+            '(%d px/sec, %d px/proc/sec)' % (
+            px_count, subprocesses, elapsed,
+            px_count // elapsed, px_count // elapsed // proc_count)
 
     # Write pixels to easily read file format.
     with open('result.png', 'wb') as f:
