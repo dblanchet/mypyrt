@@ -297,25 +297,40 @@ class Camera:
         return Line(camera.position, ray_dir)
 
 camera = Camera(
-        Point(0.0, 0.0, 10.0),
-        Vector(0.0, 0.0, -1.0),
-        3.0,  # Distance from camera to screen window.
-        Point(4.0, 3.0, 0))
+        position=Point(0.0, 0.0, 10.0),
+        direction=Vector(0.0, 0.0, -1.0),
+        screen_dist=3.0,  # Distance from camera to screen window.
+        screen_size=Point(4.0, 3.0, 0))
 
 
 # Scene setup.
 Scene = namedtuple('Scene', 'objects lights')
 
-yellowSphere = Sphere(Point(0.0, 0.0, 0.0), 3.0, Color(255, 255, 0))
-redSphere = Sphere(Point(-1.0, -2.0, 2.0), 1.5, Color(255, 0, 0))
-greenSphere = ReflectingSphere(Point(-6.0, 4.0, -3.0), 3.0, Color(0, 255, 128))
-blueSphere = Sphere(Point(8.0, -2.0, -5.0), 3.0, Color(0, 72, 255))
-tiledFloor = Plane(Point(0.0, -4.0, 0.0), Vector(0.0, 1.0, 0.0))
+yellowSphere = Sphere(
+        center=Point(0.0, 0.0, 0.0),
+        radius=3.0,
+        color=Color(255, 255, 0))
+redSphere = Sphere(
+        center=Point(-1.0, -2.0, 2.0),
+        radius=1.5,
+        color=Color(255, 0, 0))
+greenSphere = ReflectingSphere(
+        center=Point(-6.0, 4.0, -3.0),
+        radius=3.0,
+        color=Color(0, 255, 128))
+blueSphere = Sphere(
+        center=Point(8.0, -2.0, -5.0),
+        radius=3.0,
+        color=Color(0, 72, 255))
+
+tiledFloor = Plane(
+        point=Point(0.0, -4.0, 0.0),
+        normal=Vector(0.0, 1.0, 0.0))
 
 objects = [yellowSphere, redSphere, greenSphere, blueSphere, tiledFloor]
-lights = [Light(Point(-5.0, 10.0, 10.0))]
+lights = [Light(position=Point(-5.0, 10.0, 10.0))]
 
-scene = Scene(objects, lights)
+scene = Scene(objects=objects, lights=lights)
 
 
 # Image setup.
