@@ -1,5 +1,15 @@
 #! /usr/bin/python
 
+# Ideas:
+#
+# - External scene description
+# - Ray reflection limit
+# - Handle several lights
+# - Support various camera position and orientation
+# - Add transparent Sphere
+# - Make light a full visible scene object
+# - Give color to lights
+
 import sys
 import math
 
