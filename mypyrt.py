@@ -288,8 +288,9 @@ class Camera:
         self.screen_size = screen_size
 
     def make_primary_ray(self, x_scr, y_scr):
-        x = self.screen_size.x * x_scr / image_size.x - self.screen_size.x / 2
-        y = - self.screen_size.y * y_scr / image_size.y + self.screen_size.y / 2
+        ss = self.screen_size
+        x =   ss.x * x_scr / image_size.x - ss.x / 2
+        y = - ss.y * y_scr / image_size.y + ss.y / 2
         z = self.position.z + self.direction.z * self.screen_dist
 
         screen_point = Point(x, y, z)
