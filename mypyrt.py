@@ -375,7 +375,7 @@ def send_ray(ray, exclude=None):
 
     # Compute the point where ray and objects met.
     l = ray.direction
-    o = camera.position
+    o = ray.origin
     point = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
 
     # Ask touched object for a color.
