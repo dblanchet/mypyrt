@@ -107,7 +107,8 @@ class Vector:
         # http://www.3dkingdoms.com/weekly/weekly.php?a=2
         #
         # Return inverted symetrical based on arg vector.
-        return (- 2 * (self * normal)) * normal + self
+        direction = (- 2 * (self * normal)) * normal + self
+        return direction.normalize()
 
 
 Line = namedtuple('Line', 'origin direction')
