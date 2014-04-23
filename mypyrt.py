@@ -37,6 +37,14 @@ class Point:
                       self.y - p.y,
                       self.z - p.z)
 
+    def __add__(self, v):
+        if not isinstance(v, Vector):
+            raise ValueError('Expected a Vector, got a', type(v))
+
+        return Point(self.x + v.x,
+                     self.y + v.y,
+                     self.z + v.z)
+
 
 class Vector:
 
@@ -381,12 +389,10 @@ def send_ray(ray, exclude=None):
     #
     # Tuples are sorted by first item, then second item, etc.
     touched.sort()
-    d, obj = touched[0]
+    distance, obj = touched[0]
 
     # Compute the point where ray and objects met.
-    l = ray.direction
-    o = ray.origin
-    point = Point(o.x + l.x * d, o.y + l.y * d, o.z + l.z * d)
+    point = ray.origin + distance * ray.direction
 
     # Ask touched object for a color.
     return obj.rendered_pixel(point, ray)
