@@ -146,7 +146,6 @@ class SceneObject:
                 light_dist = ray_dir.norm()
 
                 # Find closest object distance.
-                touched.sort()
                 obj_dist, _ = touched[0]
 
                 # Check if the closest object stands
@@ -375,6 +374,11 @@ def touched_objects(ray, exclude=None):
         if d > 0:
             touched.append((d, obj))
 
+    # Sort touched object according to distance.
+    #
+    # Tuples are sorted by first item, then second item, etc.
+    touched.sort()
+
     return touched
 
 
@@ -387,9 +391,6 @@ def send_ray(ray, exclude=None):
 
     # If several objects intersected,
     # take first one.
-    #
-    # Tuples are sorted by first item, then second item, etc.
-    touched.sort()
     distance, obj = touched[0]
 
     # Compute the point where ray and objects met.
