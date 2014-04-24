@@ -111,9 +111,32 @@ class Vector:
         return direction.normalize()
 
 
-Line = namedtuple('Line', 'origin direction')
+class Line:
+
+    def __init__(self, origin, direction):
+        if not isinstance(origin, Point):
+            raise ValueError('Expected Point as first arg, got', type(origin))
+
+        if not isinstance(direction, Vector):
+            raise ValueError('Expected Vector as second arg, got',
+                    type(direction))
+
+        self.origin = origin
+        self.direction = direction
+
+
 Color = namedtuple('Color', 'red green blue')
 Light = namedtuple('Light', 'position')
+
+
+class Ray(Line):
+
+    MAX_HOP = 16
+
+    def __init__(self, origin, direction, hop_left=MAX_HOP, refr_idx=1.0):
+        Line.__init__(self, origin, direction)
+        self.hop_left = hop_left
+        self.refr_idx = refr_idx
 
 
 class SceneObject:
@@ -137,8 +160,8 @@ class SceneObject:
             #
             # Check if light source is visible from
             # considered point.
-            ray = Line(point, ray_dir.normalize())
             touched = touched_objects(ray, exclude=[self])
+            ray = Ray(point, ray_dir.normalize())
 
             if touched:
 
@@ -228,8 +251,8 @@ class ReflectingSphere(Sphere):
         # own color.
 
         reflect_dir = ray.direction.reflected(self.normal_at(point))
+        reflected = Ray(point, reflect_dir, ray.hop_left - 1)
 
-        reflected = Line(point, reflect_dir)
         r, g, b = send_ray(reflected, exclude=[self])
 
         c = self.color
@@ -313,7 +336,7 @@ class Camera:
 
         screen_point = Point(x, y, z)
         ray_dir = (screen_point - camera.position).normalize()
-        return Line(camera.position, ray_dir)
+        return Ray(camera.position, ray_dir)
 
 camera = Camera(
         position=Point(0.0, 0.0, 10.0),
@@ -357,6 +380,9 @@ image_size = Point(1024, 768, 0)
 
 
 def touched_objects(ray, exclude=None):
+    if not isinstance(ray, Ray):
+        raise ValueError('Expected Ray as first arg, got', type(ray))
+
     touched = []
 
     for obj in scene.objects:
@@ -383,6 +409,9 @@ def touched_objects(ray, exclude=None):
 
 
 def send_ray(ray, exclude=None):
+    if not isinstance(ray, Ray):
+        raise ValueError('Expected Ray as first arg, got', type(ray))
+
 
     # Find out scene objects reach by the ray.
     touched = touched_objects(ray, exclude)
