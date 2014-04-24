@@ -142,6 +142,9 @@ class Ray(Line):
 class SceneObject:
 
     def visible_lights(self, point):
+        if not isinstance(point, Point):
+            raise ValueError('Expected Point as first arg, got', type(point))
+
         # Return list of scene lights that are directly
         # in light of sight from the given object point.
         visible = []
@@ -181,6 +184,12 @@ class SceneObject:
         return visible
 
     def normal_at(self, point):
+        return None  # Trigger an exception if not overridden.
+
+    def intersect(self, line):
+        return None  # Trigger an exception if not overridden.
+
+    def rendered_pixel(self, point, ray):
         return None  # Trigger an exception if not overridden.
 
 
