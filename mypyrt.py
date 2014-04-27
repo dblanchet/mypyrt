@@ -189,11 +189,11 @@ class SceneObject:
                 light_dist = ray_dir.norm()
 
                 # Find closest object distance.
-                obj_dist, _ = touched[0]
+                obj_distances, _ = touched[0]
 
                 # Check if the closest object stands
                 # between point and light source.
-                if 0 < obj_dist < light_dist:
+                if 0 < obj_distances[0] < light_dist:
                     continue
 
             visible.append(light)
@@ -232,14 +232,23 @@ class Sphere(SceneObject):
         r = self.radius
 
         oc = o - c
-        mul1 = l * oc
-        discr = mul1 * mul1 - oc * oc + r * r
+        projection = l * oc
+        discr = projection * projection - oc * oc + r * r
 
         if discr < 0:
-            return -1
+            # No intersection.
+            return -1,
 
-        shortest_dist = - (l * oc) - math.sqrt(discr)
-        return shortest_dist
+        # Return all positive values, largest
+        # only otherwise.
+        longest = - (projection) + math.sqrt(discr)
+        if longest > 0:
+
+            shortest = - (projection) - math.sqrt(discr)
+            if shortest > 0:
+                return shortest, longest
+
+        return longest,
 
     def rendered_pixel(self, point, ray):
 
@@ -338,10 +347,10 @@ class Plane(SceneObject):
 
         denum = l * n
         if denum == 0:
-            return -1
+            return -1,
 
         dist = (p - o) * n / denum
-        return dist
+        return dist,
 
     def rendered_pixel(self, point, ray):
         # Plane is darker with the distance.
@@ -449,11 +458,14 @@ def touched_objects(ray, exclude=None):
         if exclude is not None and obj in exclude:
             continue
 
+        # Distance is returned as a tuples of
+        # distances. This tuple may contain one
+        # or more values. Values are sorted.
         d = obj.intersect(ray)
 
         # We do not care about objects
         # behind camera.
-        if d > 0:
+        if d[0] > 0:
             touched.append((d, obj))
 
     # Sort touched object according to distance.
@@ -464,10 +476,9 @@ def touched_objects(ray, exclude=None):
     return touched
 
 
-def send_ray(ray, exclude=None):
+def send_ray(ray, exclude=None, farthest=False):
     if not isinstance(ray, Ray):
         raise ValueError('Expected Ray as first arg, got', type(ray))
-
 
     # Find out scene objects reach by the ray.
     touched = touched_objects(ray, exclude)
@@ -476,10 +487,13 @@ def send_ray(ray, exclude=None):
 
     # If several objects intersected,
     # take first one.
-    distance, obj = touched[0]
+    distances, obj = touched[0]
 
     # Compute the point where ray and objects met.
-    point = ray.origin + distance * ray.direction
+    #
+    # Caller may want the closest or the farthest point.
+    dist_idx = -1 if farthest else 0
+    point = ray.origin + distances[dist_idx] * ray.direction
 
     # Ask touched object for a color.
     return obj.rendered_pixel(point, ray)
