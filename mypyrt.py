@@ -40,6 +40,7 @@ class Point:
         if not isinstance(v, Vector):
             raise ValueError('Expected a Vector, got a', type(v))
 
+        # A point plus a vector makes another Point.
         return Point(self.x + v.x,
                      self.y + v.y,
                      self.z + v.z)
@@ -290,6 +291,7 @@ class ReflectingSphere(Sphere):
 
         r, g, b = send_ray(reflected, exclude=[self])
 
+        # Apply sphere own color to reflected color.
         c = self.color
         return [int(r * c.red / 255),
                 int(g * c.green / 255),
