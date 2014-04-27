@@ -146,12 +146,11 @@ Color = namedtuple('Color', 'red green blue')
 
 class Ray(Line):
 
-    MAX_HOP = 16
+    MAX_BOUNCE_COUNT = 16
 
-    def __init__(self, origin, direction, hop_left=MAX_HOP, refr_idx=1.0):
+    def __init__(self, origin, direction, bounce_left=MAX_BOUNCE_COUNT):
         Line.__init__(self, origin, direction)
-        self.hop_left = hop_left
-        self.refr_idx = refr_idx
+        self.bounce_left = bounce_left
 
 
 class SceneObject:
@@ -287,7 +286,7 @@ class ReflectingSphere(Sphere):
         # own color.
 
         reflect_dir = ray.direction.reflected(self.normal_at(point))
-        reflected = Ray(point, reflect_dir, ray.hop_left - 1)
+        reflected = Ray(point, reflect_dir, ray.bounce_left - 1)
 
         r, g, b = send_ray(reflected, exclude=[self])
 
@@ -310,7 +309,7 @@ class Light(Sphere):
         # It adds its own light as a halo over
         # object/background located behind.
 
-        transmitted = Ray(point, ray.direction, ray.hop_left)
+        transmitted = Ray(point, ray.direction, ray.bounce_left)
         r, g, b = send_ray(transmitted, exclude=[self])
 
         dist = ray.distance(self.position)
