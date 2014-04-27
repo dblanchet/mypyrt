@@ -280,6 +280,11 @@ class Sphere(SceneObject):
 class ReflectingSphere(Sphere):
 
     def rendered_pixel(self, point, ray):
+
+        # No reflection if bounce count is reached.
+        if ray.bounce_left == 0:
+            return Sphere.rendered_pixel(self, point, ray)
+
         # Coming ray is reflected according to
         # sphere surface normal and color is taken
         # from touched object mixed with Sphere's
