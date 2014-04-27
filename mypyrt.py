@@ -7,7 +7,6 @@
 # - Handle several lights
 # - Support various camera position and orientation
 # - Add transparent Sphere
-# - Make light a full visible scene object
 # - Give color to lights
 
 import sys
@@ -89,6 +88,12 @@ class Vector:
                       self.y + o.y,
                       self.z + o.z)
 
+    def __sub__(self, o):
+        return self.__add__(-o)
+
+    def __neg__(self):
+        return self * (-1.0)
+
     def __div__(self, k):
         # Division is correct with num scalar only.
         val = float(k)  # Let conversion fail for incorrect types.
@@ -124,9 +129,18 @@ class Line:
         self.origin = origin
         self.direction = direction
 
+    def distance(self, point):
+        # http://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+        if not isinstance(point, Point):
+            raise ValueError('Expected Point as arg, got', type(point))
+
+        op = self.origin - point
+        proj_vect = op - (op * self.direction) * self.direction
+
+        return proj_vect.norm()
+
 
 Color = namedtuple('Color', 'red green blue')
-Light = namedtuple('Light', 'position')
 
 
 class Ray(Line):
@@ -163,8 +177,11 @@ class SceneObject:
             #
             # Check if light source is visible from
             # considered point.
-            touched = touched_objects(ray, exclude=[self])
+            #
+            # Exclude all light objects so they
+            # do not stop sent rays.
             ray = Ray(point, ray_dir.normalize())
+            touched = touched_objects(ray, exclude=scene.lights + [self])
 
             if touched:
 
@@ -270,6 +287,30 @@ class ReflectingSphere(Sphere):
                 int(b * c.blue / 255)]
 
 
+class Light(Sphere):
+
+    def __init__(self, position, radius=1.0, color=Color(255, 255, 255)):
+        Sphere.__init__(self, position, radius, color)
+        self.position = position
+
+    def rendered_pixel(self, point, ray):
+        # Light does not stop the ray.
+        #
+        # It adds its own light as a halo over
+        # object/background located behind.
+
+        transmitted = Ray(point, ray.direction, ray.hop_left)
+        r, g, b = send_ray(transmitted, exclude=[self])
+
+        dist = ray.distance(self.position)
+        coeff = 1.0 - pow(dist / self.radius, 0.5)
+
+        c = self.color
+        return [int(min(r + c.red * coeff, 255)),
+                int(min(g + c.green * coeff, 255)),
+                int(min(b + c.blue * coeff, 255))]
+
+
 class Plane(SceneObject):
 
     def __init__(self, point, normal):
@@ -365,7 +406,7 @@ redSphere = Sphere(
         center=Point(-1.0, -2.0, 2.0),
         radius=1.5,
         color=Color(255, 0, 0))
-greenSphere = ReflectingSphere(
+reflecting = ReflectingSphere(
         center=Point(-6.0, 4.0, -3.0),
         radius=3.0,
         color=Color(0, 255, 128))
@@ -378,8 +419,14 @@ tiledFloor = Plane(
         point=Point(0.0, -4.0, 0.0),
         normal=Vector(0.0, 1.0, 0.0))
 
-objects = [yellowSphere, redSphere, greenSphere, blueSphere, tiledFloor]
-lights = [Light(position=Point(-5.0, 10.0, 10.0))]
+light = Light(position=Point(-5.0, 10.0, 10.0))
+objects = [
+        yellowSphere, redSphere, blueSphere,
+        reflecting,
+        tiledFloor,
+        light]
+
+lights = [light]
 
 scene = Scene(objects=objects, lights=lights)
 
