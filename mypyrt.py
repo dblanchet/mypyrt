@@ -302,6 +302,118 @@ class ReflectingSphere(Sphere):
                 int(b * c.blue / 255)]
 
 
+class TransparentSphere(Sphere):
+
+    def __init__(self, center, radius, color=Color(255, 255, 255),
+            refr_idx=1.5):
+        Sphere.__init__(self, center, radius, color)
+        self.refr_idx = refr_idx
+
+    def rendered_pixel(self, point, ray):
+
+        # No reflection/transmission if bounce_left
+        # count is reached.
+        if ray.bounce_left == 0:
+            return Sphere.rendered_pixel(self, point, ray)
+
+        # Coming ray is reflected and transmitted
+        # according to sphere surface normal and
+        # internal material refractive index.
+        #
+        # Color is taken from touched objects mixed
+        # with Sphere's own color.
+
+        # Find ray projection on normal.
+        n = self.normal_at(point)
+        proj = ray.direction * n
+
+        # Result depends on the ray entering
+        # or exiting the sphere.
+        entering = proj < 0
+
+        if entering:
+
+            # Set proper refraction indices.
+            n1, n2 = 1.0, self.refr_idx
+
+            # Reflected ray.
+            reflect_dir = ray.direction.reflected(self.normal_at(point))
+            reflected = Ray(point, reflect_dir, ray.bounce_left - 1)
+            refl_r, refl_g, refl_b = send_ray(reflected, exclude=[self])
+
+        else:
+
+            # Set proper refraction indices.
+            n1, n2 = self.refr_idx, 1.0
+
+            # We do not want a reflected ray.
+            refl_r, refl_g, refl_b = 0, 0, 0
+
+        # Compute transmission intermediate value.
+        #
+        # http://www.cs.rpi.edu/~cutler/classes/advancedgraphics/
+        #                                     F05/lectures/13_ray_tracing.pdf
+        ratio = n1 / n2
+        det = 1.0 - (ratio * ratio) * (1.0 - proj * proj)
+
+        if det < 0:
+
+            # When negative, reflection is total,
+            # no transmission.
+            #
+            # Should never occur when n2 > n1.
+            refl_coeff = 1
+            trans_coeff = 0
+
+            trans_r, trans_g, trans_b = 0, 0, 0
+
+        else:
+
+            # Keep reflection to a reasonable level.
+            refl_coeff = 0.1
+            trans_coeff = 1.0 - refl_coeff
+
+            # Build transmitted ray.
+            n_comp = ratio * proj - math.sqrt(det)
+            direction = n_comp * n + ratio * ray.direction
+            transmitted = Ray(point, direction.normalize(),
+                    bounce_left=ray.bounce_left - 1)
+
+            if entering:
+                # When transmitted ray enters the sphere,
+                # the only relevant object is the sphere
+                # itself.
+                excluded = scene.objects[:].remove(self)
+
+                # Send transmitted ray.
+                #
+                # We want to ensure the intersection point
+                # is the farthest, so it is not confused
+                # with current "point" argument.
+                trans_r, trans_g, trans_b = send_ray(transmitted, excluded,
+                        farthest=True)
+            else:
+                # When transmitted ray exits the sphere,
+                # all objects are relevant except itself.
+                excluded = [self]
+
+                # Send transmitted ray.
+                trans_r, trans_g, trans_b = send_ray(transmitted, excluded)
+
+        # Compute resulting color.
+        #
+        # Partition result between transmitted and reflected rays.
+        r = refl_coeff * refl_r + trans_coeff * trans_r
+        g = refl_coeff * refl_g + trans_coeff * trans_g
+        b = refl_coeff * refl_b + trans_coeff * trans_b
+
+        # Apply sphere own color to reflected/transmitted color.
+        c = self.color
+        return [int(r * c.red / 255),
+                int(g * c.green / 255),
+                int(b * c.blue / 255)]
+
+
 class Light(Sphere):
 
     def __init__(self, position, radius=1.0, color=Color(255, 255, 255)):
@@ -429,6 +541,10 @@ blueSphere = Sphere(
         center=Point(8.0, -2.0, -5.0),
         radius=3.0,
         color=Color(0, 72, 255))
+transparent = TransparentSphere(
+        center=Point(-4.0, -1.0, 1.0),
+        radius=1.5,
+        refr_idx=10.5)
 
 tiledFloor = Plane(
         point=Point(0.0, -4.0, 0.0),
@@ -438,6 +554,7 @@ light = Light(position=Point(-5.0, 10.0, 10.0))
 objects = [
         yellowSphere, redSphere, blueSphere,
         reflecting,
+        transparent,
         tiledFloor,
         light]
 
