@@ -3,9 +3,7 @@
 EXE_FILE=./mypyrt.py
 STAT_FILE=stats.txt
 
-# No subprocesses.
-$EXE_FILE | tee $STAT_FILE
-
+# 0 stands for no subprocesses.
 for subproc_count in {0..10}
 do
     $EXE_FILE $subproc_count | tee -a $STAT_FILE
