@@ -53,7 +53,7 @@ class Vector:
         self.y = y
         self.z = z
 
-    def _vector_mul(self, v):
+    def _dot_product(self, v):
         return   self.x * v.x \
                + self.y * v.y \
                + self.z * v.z
@@ -67,7 +67,7 @@ class Vector:
 
         # If argument is a Vector, return dot product.
         if isinstance(o, Vector):
-            return self._vector_mul(o)
+            return self._dot_product(o)
 
         try:
             # If argument is a num scalar, return a Vector.
