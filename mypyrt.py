@@ -209,6 +209,12 @@ class SceneObject:
     def rendered_pixel(self, point, ray):
         return None  # Trigger an exception if not overridden.
 
+    def apply_own_color(self, r, g, b):
+        c = self.color
+        return [int(r * c.red / 255.0),
+                int(g * c.green / 255.0),
+                int(b * c.blue / 255.0)]
+
 
 class Sphere(SceneObject):
 
@@ -271,10 +277,7 @@ class Sphere(SceneObject):
         coeff /= 255.0
 
         # Apply brightness variation to sphere color.
-        c = self.color
-        return [int(c.red * coeff),
-                int(c.green * coeff),
-                int(c.blue * coeff)]
+        return self.adjust_with_lights(self.color, light_coeffs)
 
 
 class ReflectingSphere(Sphere):
@@ -296,10 +299,7 @@ class ReflectingSphere(Sphere):
         r, g, b = send_ray(reflected, exclude=[self])
 
         # Apply sphere own color to reflected color.
-        c = self.color
-        return [int(r * c.red / 255),
-                int(g * c.green / 255),
-                int(b * c.blue / 255)]
+        return self.apply_own_color(r, g, b)
 
 
 class TransparentSphere(Sphere):
@@ -432,6 +432,7 @@ class Light(Sphere):
         dist = ray.distance(self.position)
         coeff = 1.0 - pow(dist / self.radius, 0.5)
 
+        # Apply light own color.
         c = self.color
         return [int(min(r + c.red * coeff, 255)),
                 int(min(g + c.green * coeff, 255)),
