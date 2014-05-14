@@ -9,6 +9,8 @@
 # - Add transparent Sphere
 # - Give color to lights
 
+from __future__ import print_function
+
 import sys
 import math
 
@@ -663,10 +665,10 @@ def main(argv=None):
     elapsed = time() - start
     px_count = image_size.x * image_size.y
     proc_count = subprocesses if subprocesses > 0 else 1
-    print '%d pixels with %d subprocesses in %d seconds ' \
+    print('%d pixels with %d subprocesses in %d seconds '
             '(%d px/sec, %d px/proc/sec)' % (
             px_count, subprocesses, elapsed,
-            px_count // elapsed, px_count // elapsed // proc_count)
+            px_count // elapsed, px_count // elapsed // proc_count))
 
     # Write pixels to easily read file format.
     with open('result.png', 'wb') as f:
