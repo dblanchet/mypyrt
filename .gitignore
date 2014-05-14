@@ -2,3 +2,4 @@
 *.py[cdo]
 stats.txt
 result.png
+pypy-env
