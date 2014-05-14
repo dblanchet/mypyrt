@@ -416,12 +416,14 @@ class TransparentSphere(Sphere):
 
 class Light(Sphere):
 
+    HALO_ATTENUATION = 0.5
+
     def __init__(self, position, radius=1.0, color=Color(255, 255, 255)):
         Sphere.__init__(self, position, radius, color)
         self.position = position
 
     def rendered_pixel(self, point, ray):
-        # Light does not stop the ray.
+        # Light object does not stop the ray.
         #
         # It adds its own light as a halo over
         # object/background located behind.
@@ -430,7 +432,7 @@ class Light(Sphere):
         r, g, b = send_ray(transmitted, exclude=[self])
 
         dist = ray.distance(self.position)
-        coeff = 1.0 - pow(dist / self.radius, 0.5)
+        coeff = 1.0 - pow(dist / self.radius, self.HALO_ATTENUATION)
 
         # Apply light own color.
         c = self.color
