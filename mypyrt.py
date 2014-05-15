@@ -562,8 +562,8 @@ class Plane(SceneObject):
 
         # RGB are all treated the same, making
         # light and dark gray tiles.
-        base_comp = base / (1.0 + attenuation)
-        base_color = Color(base_comp, base_comp, base_comp)
+        base /= (1.0 + attenuation)
+        base_color = Color(base, base, base)
 
         # Change brightness according to visible lights,
         # i.e. take care of cast shadows.
