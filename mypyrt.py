@@ -746,11 +746,13 @@ def main(argv=None):
     # Print timing information.
     elapsed = time() - start
     px_count = image_size.x * image_size.y
+    px_per_sec = px_count // elapsed
+
     proc_count = subprocesses if subprocesses > 0 else 1
     print('%d pixels with %d subprocesses in %d seconds '
             '(%d px/sec, %d px/proc/sec)' % (
             px_count, subprocesses, elapsed,
-            px_count // elapsed, px_count // elapsed // proc_count))
+            px_per_sec, px_per_sec // proc_count))
 
     # Write pixels to easily read file format.
     with open('result.png', 'wb') as f:
