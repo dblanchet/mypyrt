@@ -5,7 +5,6 @@
 # - External scene description
 # - Handle several lights
 # - Support various camera position and orientation
-# - Add transparent Sphere
 # - Give color to lights
 
 from __future__ import print_function
@@ -156,6 +155,9 @@ class Ray(Line):
 
 class SceneObject:
 
+    def __init__(self):
+        self.transparent = False
+
     def visible_lights(self, point):
         if not isinstance(point, Point):
             raise ValueError('Expected Point as first arg, got', type(point))
@@ -184,20 +186,50 @@ class SceneObject:
             ray = Ray(point, ray_dir.normalize())
             touched = touched_objects(ray, exclude=scene.lights + [self])
 
+            # Until an object is touched,
+            # light is unchanged.
+            light_coeff = 1.0, 1.0, 1.0
+
             if touched:
 
                 # Computed distance from point to light source.
                 light_dist = ray_dir.norm()
 
-                # Find closest object distance.
-                obj_distances, _ = touched[0]
+                for obj_distances, obj in touched:
 
-                # Check if the closest object stands
-                # between point and light source.
-                if 0 < obj_distances[0] < light_dist:
-                    continue
+                    shortest = obj_distances[0]
 
-            visible.append(light)
+                    # Touched object is behind self object,
+                    #
+                    # Try with next touched object.
+                    if not 0 < shortest:
+                        continue
+
+                    # Object is behind light.
+                    #
+                    # Next objects will be also, stop iteration.
+                    if not shortest < light_dist:
+                        break
+
+                    if not obj.transparent:
+                        # Touched object is opaque.
+                        #
+                        # Stop iteration, as the light is
+                        # completely masked.
+                        light_coeff = 0, 0, 0
+                        break
+
+                    # Object is transparent, get
+                    # effect on shadow color.
+                    intersect = point + shortest * ray.direction
+                    obj_coeff = obj.cast_shadow_coeffs(intersect, ray)
+                    light_coeff = tuple(a * b
+                            for a, b in zip(light_coeff, obj_coeff))
+
+            # If light is not completely masked,
+            # add it to visible list.
+            if light_coeff > (0, 0, 0):
+                visible.append((light, light_coeff))
 
         return visible
 
@@ -207,8 +239,25 @@ class SceneObject:
     def intersect(self, line):
         return None  # Trigger an exception if not overridden.
 
+    def cast_shadow_coeffs(self, point, ray):
+        return None  # Trigger an exception if not overridden
+                     # in transparent objects.
+
     def rendered_pixel(self, point, ray):
         return None  # Trigger an exception if not overridden.
+
+    def adjust_with_ambient(self, color_base, light_coeffs):
+
+        # Transparent objects may change shadow color.
+        r_light_coeff, g_light_coeff, b_light_coeff = light_coeffs
+        r_coeff = AMBIANT_LIGHT + (255 - AMBIANT_LIGHT) * r_light_coeff
+        g_coeff = AMBIANT_LIGHT + (255 - AMBIANT_LIGHT) * g_light_coeff
+        b_coeff = AMBIANT_LIGHT + (255 - AMBIANT_LIGHT) * b_light_coeff
+
+        # Apply brightness variation to object color.
+        return (int(color_base.red * r_coeff / 255.0),
+                int(color_base.green * g_coeff / 255.0),
+                int(color_base.blue * b_coeff / 255.0))
 
     def apply_own_color(self, r, g, b):
         c = self.color
@@ -223,6 +272,9 @@ class Sphere(SceneObject):
         if not isinstance(center, Point):
             raise ValueError('Expected a Point as first arg, got a',
                     type(center))
+
+        SceneObject.__init__(self)
+
         self.center = center
         self.radius = float(radius)
         self.color = color
@@ -259,26 +311,29 @@ class Sphere(SceneObject):
 
     def rendered_pixel(self, point, ray):
 
-        # Change brightness according to visible lights.
+        # Change brightness according to visible lights,
+        # i.e. take care of own and cast shadows.
         lights = self.visible_lights(point)
+        if lights:
 
-        if len(lights) > 0:
-            # Take first light source only.
-            light = lights[0]
+            light, light_coeffs = lights[0]
 
             # Change brightness according to ray
             # to normal angle.
             light_dir = (light.position - point).normalize()
             attenuation = abs(light_dir * self.normal_at(point))
 
-            coeff = AMBIANT_LIGHT + (255 - AMBIANT_LIGHT) * attenuation
-        else:
-            coeff = AMBIANT_LIGHT
+            # Apply this brightness change to
+            # shadow previous coefficients.
+            light_coeffs = map(lambda x: x * attenuation, light_coeffs)
 
-        coeff /= 255.0
+        else:
+
+            # No visible light.
+            light_coeffs = 0, 0, 0
 
         # Apply brightness variation to sphere color.
-        return self.adjust_with_lights(self.color, light_coeffs)
+        return self.adjust_with_ambient(self.color, light_coeffs)
 
 
 class ReflectingSphere(Sphere):
@@ -308,6 +363,7 @@ class TransparentSphere(Sphere):
     def __init__(self, center, radius, color=Color(255, 255, 255),
             refr_idx=1.5):
         Sphere.__init__(self, center, radius, color)
+        self.transparent = True
         self.refr_idx = refr_idx
 
     def rendered_pixel(self, point, ray):
@@ -409,10 +465,24 @@ class TransparentSphere(Sphere):
         b = refl_coeff * refl_b + trans_coeff * trans_b
 
         # Apply sphere own color to reflected/transmitted color.
+        return self.apply_own_color(r, g, b)
+
+    def cast_shadow_coeffs(self, point, ray):
+
+        # Find ray projection on normal.
+        n = self.normal_at(point)
+        proj = ray.direction * n
+
+        # Change light intensity according to
+        # normal: brighter towards shadow center,
+        # darker on shadow borders.
+        coeff = abs(proj)
+
+        # Apply sphere own color to reflected/transmitted color.
         c = self.color
-        return [int(r * c.red / 255),
-                int(g * c.green / 255),
-                int(b * c.blue / 255)]
+        return (coeff * c.red / 255,
+                coeff * c.green / 255,
+                coeff * c.blue / 255)
 
 
 class Light(Sphere):
@@ -453,6 +523,8 @@ class Plane(SceneObject):
             raise ValueError('Expected Vector as second arg, got',
                     type(normal))
 
+        SceneObject.__init__(self)
+
         self.point = point
         self.normal = normal
 
@@ -475,6 +547,7 @@ class Plane(SceneObject):
         return dist,
 
     def rendered_pixel(self, point, ray):
+
         # Plane is darker with the distance.
         if point.z > 0:
             attenuation = 0.0
@@ -487,17 +560,26 @@ class Plane(SceneObject):
         else:
             base = 64
 
-        # Change brightness according to visible lights.
-        lights = self.visible_lights(point)
-        coeff = AMBIANT_LIGHT + (255 - AMBIANT_LIGHT) * len(lights)
-        coeff /= 255.0
-
         # RGB are all treated the same, making
         # light and dark gray tiles.
-        return [int(base / (1.0 + attenuation) * coeff)] * 3
+        base_comp = base / (1.0 + attenuation)
+        base_color = Color(base_comp, base_comp, base_comp)
+
+        # Change brightness according to visible lights,
+        # i.e. take care of cast shadows.
+        lights = self.visible_lights(point)
+        if lights:
+            light, light_coeffs = lights[0]
+        else:
+            light_coeffs = 0, 0, 0
+
+        # Apply brightness variation to plane color.
+        #
+        # Transparent objects may change shadow color.
+        return self.adjust_with_ambient(base_color, light_coeffs)
 
 
-AMBIANT_LIGHT = 64
+AMBIANT_LIGHT = 48
 BACKGROUND_COLOR = Color(0, 0, AMBIANT_LIGHT)  # Dark Blue
 
 
@@ -548,6 +630,7 @@ blueSphere = Sphere(
 transparent = TransparentSphere(
         center=Point(-4.0, -1.0, 1.0),
         radius=1.5,
+        color=Color(255, 190, 190),
         refr_idx=10.5)
 
 tiledFloor = Plane(
@@ -579,7 +662,7 @@ def touched_objects(ray, exclude=None):
 
     for obj in scene.objects:
 
-        # We may want to exclude objects:
+        # We may want to exclude objects: e.g.
         # when computing cast shadows, we want to
         # exclude current illuminated object.
         if exclude is not None and obj in exclude:
