@@ -3,7 +3,6 @@
 # Ideas:
 #
 # - External scene description
-# - Ray reflection limit
 # - Handle several lights
 # - Support various camera position and orientation
 # - Add transparent Sphere
