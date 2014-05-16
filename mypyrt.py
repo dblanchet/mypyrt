@@ -514,6 +514,9 @@ class Light(Sphere):
 
 class Plane(SceneObject):
 
+    DARK_TILE = 64
+    LIGHT_TILE = 255
+
     def __init__(self, point, normal):
         if not isinstance(point, Point):
             raise ValueError('Expected Point as first arg, got',
@@ -556,9 +559,9 @@ class Plane(SceneObject):
 
         # Tiled rendering.
         if int(math.floor(point.x / 2) + math.floor(point.z / 2)) & 1:
-            base = 255
+            base = self.LIGHT_TILE
         else:
-            base = 64
+            base = self.DARK_TILE
 
         # RGB are all treated the same, making
         # light and dark gray tiles.
