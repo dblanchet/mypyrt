@@ -95,6 +95,10 @@ class Vector:
     def __neg__(self):
         return self * (-1.0)
 
+    def __truediv__(self, k):
+        # Python 3 support requires this one.
+        return self.__div__(k)
+
     def __div__(self, k):
         # Division is correct with num scalar only.
         val = float(k)  # Let conversion fail for incorrect types.
@@ -733,9 +737,21 @@ def main(argv=None):
     start = time()  # Take a time reference before.
 
     if subprocesses == 0:
+
         # Use current process for line rendering.
         lines = map(render_line, range(image_size.y))
+
+        # Python 3: map returns an iterator, not a list.
+        #
+        # Coerce to list so iterator is consumed and
+        # rendering is performed immediately.
+        try:
+            len(lines)
+        except TypeError:
+            lines = list(lines)
+
     else:
+
         # Distribute line rendering over available CPUs.
         pool = multiprocessing.Pool(processes=subprocesses)
         lines = pool.map(render_line, range(image_size.y))
