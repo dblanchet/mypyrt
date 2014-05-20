@@ -29,7 +29,7 @@ class Point:
 
     def __sub__(self, p):
         if not isinstance(p, Point):
-            raise ValueError('Expected a Point, got a', type(p))
+            raise ValueError('Expected a Point, got a %s' % p.__class__)
 
         # Difference between points makes a Vector.
         return Vector(self.x - p.x,
@@ -38,7 +38,7 @@ class Point:
 
     def __add__(self, v):
         if not isinstance(v, Vector):
-            raise ValueError('Expected a Vector, got a', type(v))
+            raise ValueError('Expected a Vector, got a %s' % v.__class__)
 
         # A point plus a vector makes another Point.
         return Point(self.x + v.x,
@@ -76,14 +76,15 @@ class Vector:
         except ValueError:
             pass
 
-        raise ValueError('Expected a Point or a number, got a', type(o))
+        raise ValueError('Expected a Point or a number, got a %s'
+                % o.__class__)
 
     def __rmul__(self, o):
         return self.__mul__(o)
 
     def __add__(self, o):
         if not isinstance(o, Vector):
-            raise ValueError('Expected a Vector, got a', type(o))
+            raise ValueError('Expected a Vector, got a %s' % o.__class__)
 
         return Vector(self.x + o.x,
                       self.y + o.y,
@@ -112,7 +113,8 @@ class Vector:
 
     def reflected(self, normal):
         if not isinstance(normal, Vector):
-            raise ValueError('Expected a Vector, got a', type(normal))
+            raise ValueError('Expected a Vector, got a %s '
+                    % normal.__class__)
 
         # http://www.3dkingdoms.com/weekly/weekly.php?a=2
         #
@@ -125,11 +127,12 @@ class Line:
 
     def __init__(self, origin, direction):
         if not isinstance(origin, Point):
-            raise ValueError('Expected Point as first arg, got', type(origin))
+            raise ValueError('Expected Point as first arg, got %s'
+                    % origin.__class__)
 
         if not isinstance(direction, Vector):
-            raise ValueError('Expected Vector as second arg, got',
-                    type(direction))
+            raise ValueError('Expected Vector as second arg, got %s'
+                    % direction.__class__)
 
         self.origin = origin
         self.direction = direction
@@ -137,7 +140,7 @@ class Line:
     def distance(self, point):
         # http://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
         if not isinstance(point, Point):
-            raise ValueError('Expected Point as arg, got', type(point))
+            raise ValueError('Expected Point as arg, got %s' % point.__class__)
 
         op = self.origin - point
         proj_vect = op - (op * self.direction) * self.direction
@@ -164,7 +167,8 @@ class SceneObject:
 
     def visible_lights(self, point):
         if not isinstance(point, Point):
-            raise ValueError('Expected Point as first arg, got', type(point))
+            raise ValueError('Expected Point as first arg, got %s'
+                    % point.__class__)
 
         # Return list of scene lights that are directly
         # in light of sight from the given object point.
@@ -274,8 +278,8 @@ class Sphere(SceneObject):
 
     def __init__(self, center, radius, color=Color(255, 255, 255)):
         if not isinstance(center, Point):
-            raise ValueError('Expected a Point as first arg, got a',
-                    type(center))
+            raise ValueError('Expected a Point as first arg, got a %s'
+                    % center.__class__)
 
         SceneObject.__init__(self)
 
@@ -523,12 +527,12 @@ class Plane(SceneObject):
 
     def __init__(self, point, normal):
         if not isinstance(point, Point):
-            raise ValueError('Expected Point as first arg, got',
-                    type(point))
+            raise ValueError('Expected Point as first arg, got %s'
+                    % point.__class__)
 
         if not isinstance(normal, Vector):
-            raise ValueError('Expected Vector as second arg, got',
-                    type(normal))
+            raise ValueError('Expected Vector as second arg, got %s'
+                    % normal.__class__)
 
         SceneObject.__init__(self)
 
@@ -663,7 +667,7 @@ image_size = Point(1024, 768, 0)
 
 def touched_objects(ray, exclude=None):
     if not isinstance(ray, Ray):
-        raise ValueError('Expected Ray as first arg, got', type(ray))
+        raise ValueError('Expected Ray as first arg, got %s' % ray.__class__)
 
     touched = []
 
@@ -695,7 +699,7 @@ def touched_objects(ray, exclude=None):
 
 def send_ray(ray, exclude=None, farthest=False):
     if not isinstance(ray, Ray):
-        raise ValueError('Expected Ray as first arg, got', type(ray))
+        raise ValueError('Expected Ray as first arg, got %s' % ray.__name__)
 
     # Find out scene objects reach by the ray.
     touched = touched_objects(ray, exclude)
