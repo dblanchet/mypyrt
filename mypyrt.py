@@ -2,7 +2,6 @@
 
 # Ideas:
 #
-# - External scene description
 # - Handle several lights
 # - Support various camera position and orientation
 # - Give color to lights
@@ -16,6 +15,8 @@ from collections import namedtuple
 
 import multiprocessing
 from time import time
+
+import json
 
 import png
 
@@ -620,6 +621,9 @@ camera = Camera(
 
 
 # Scene setup.
+EXTERNAL_SCENE_FILENAME = 'scene.json'
+
+
 class Scene:
 
     def __init__(self, objects, lights):
@@ -627,66 +631,92 @@ class Scene:
         self.lights = lights
 
     @staticmethod
+    def _parse_scene_setup(data, namespace):
+
+        def parse(json_obj):
+
+            # Check if object requires a dedicated constructor.
+            try:
+                classname = json_obj['type']
+            except TypeError:
+                return json_obj
+
+            # Remove now useless type information.
+            del json_obj['type']
+
+            # Parse arguments if necessary.
+            kwargs = {key: parse(value) for key, value in json_obj.items()}
+
+            # Create instance.
+            return namespace[classname](**kwargs)
+
+        lights = [parse(obj) for obj in data['lights']]
+        objects = [parse(obj) for obj in data['objects']]
+
+        return lights, objects
+
+    @staticmethod
     def load_scene(filename):
         try:
-            # Try to find external scene
-            # and its dependencies.
-            import scene_parser
-            import json
-
+            # Try to find external scene description.
             with open(filename, 'r') as f:
                 data = json.loads(f.read())
 
-            lights, objects = scene_parser.parse_scene_setup(data, globals())
-            objects += lights  # We want lights to be rendered.
-
+            lights, objects = Scene._parse_scene_setup(data, globals())
             print("Rendering scene from %s..." % filename)
 
-        except (IOError, ImportError):
-
-            # Load default scene.
-            yellowSphere = Sphere(
-                    center=Point(0.0, 0.0, 0.0),
-                    radius=3.0,
-                    color=Color(255, 255, 0))
-            redSphere = Sphere(
-                    center=Point(-1.0, -2.0, 2.0),
-                    radius=1.5,
-                    color=Color(255, 0, 0))
-            reflecting = ReflectingSphere(
-                    center=Point(-6.0, 4.0, -3.0),
-                    radius=3.0,
-                    color=Color(0, 255, 128))
-            blueSphere = Sphere(
-                    center=Point(8.0, -2.0, -5.0),
-                    radius=3.0,
-                    color=Color(0, 72, 255))
-            transparent = TransparentSphere(
-                    center=Point(-4.0, -1.0, 1.0),
-                    radius=1.5,
-                    color=Color(255, 190, 190),
-                    refr_idx=10.5)
-
-            tiledFloor = Plane(
-                    point=Point(0.0, -4.0, 0.0),
-                    normal=Vector(0.0, 1.0, 0.0))
-
-            light = Light(position=Point(-5.0, 10.0, 10.0))
-
-            objects = [
-                    yellowSphere, redSphere, blueSphere,
-                    reflecting,
-                    transparent,
-                    tiledFloor,
-                    light]  # We want lights to be rendered.
-
-            lights = [light]
-
+        except IOError:
+            # Use default scene if not found.
+            lights, objects = Scene.default_scene()
             print("Rendering default scene...")
+
+        # We want lights to be rendered.
+        objects += lights
 
         return Scene(objects=objects, lights=lights)
 
-scene = Scene.load_scene('scene.json')
+    @staticmethod
+    def default_scene():
+
+        light = Light(position=Point(-5.0, 10.0, 10.0))
+        lights = [light]
+
+        yellowSphere = Sphere(
+                center=Point(0.0, 0.0, 0.0),
+                radius=3.0,
+                color=Color(255, 255, 0))
+        redSphere = Sphere(
+                center=Point(-1.0, -2.0, 2.0),
+                radius=1.5,
+                color=Color(255, 0, 0))
+        reflecting = ReflectingSphere(
+                center=Point(-6.0, 4.0, -3.0),
+                radius=3.0,
+                color=Color(0, 255, 128))
+        blueSphere = Sphere(
+                center=Point(8.0, -2.0, -5.0),
+                radius=3.0,
+                color=Color(0, 72, 255))
+        transparent = TransparentSphere(
+                center=Point(-4.0, -1.0, 1.0),
+                radius=1.5,
+                color=Color(255, 190, 190),
+                refr_idx=10.5)
+
+        tiledFloor = Plane(
+                point=Point(0.0, -4.0, 0.0),
+                normal=Vector(0.0, 1.0, 0.0))
+
+        objects = [
+                yellowSphere, redSphere, blueSphere,
+                reflecting,
+                transparent,
+                tiledFloor]
+
+        return lights, objects
+
+scene = Scene.load_scene(EXTERNAL_SCENE_FILENAME)
+
 
 # Image setup.
 image_size = Point(1024, 768, 0)
