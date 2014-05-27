@@ -18,7 +18,7 @@ This software has been not written for fast rendering times.
      -o FILENAME      PNG output filename (default: result.png)
    ````
 
-Default rendering uses Python's `multiprocessing` to speedup rendering.
+Default arguments use Python's `multiprocessing` to speedup rendering.
 
 Debugging is way easier with `-j 0` flag.
 
