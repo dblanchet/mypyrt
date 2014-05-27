@@ -9,16 +9,17 @@
 from __future__ import print_function
 
 import sys
-import math
 
-from collections import namedtuple
+import argparse
+import json
 
 import multiprocessing
 from time import time
 
-import json
-
 import png
+
+import math
+from collections import namedtuple
 
 
 class Point:
@@ -723,6 +724,7 @@ image_size = Point(1024, 768, 0)
 
 
 def touched_objects(ray, exclude=None):
+
     if not isinstance(ray, Ray):
         raise ValueError('Expected Ray as first arg, got %s' % ray.__class__)
 
@@ -755,6 +757,7 @@ def touched_objects(ray, exclude=None):
 
 
 def send_ray(ray, exclude=None, farthest=False):
+
     if not isinstance(ray, Ray):
         raise ValueError('Expected Ray as first arg, got %s' % ray.__name__)
 
@@ -792,11 +795,16 @@ def render_line(y):
 
 def main(argv=None):
 
-    subprocesses = int(argv[1]) if len(argv) > 1 else None
+    # Parse command-line.
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-j', '--subprocesses', help='Subprocess count limit',
+            type=int, default=None, nargs='?')
+    args = parser.parse_args()
 
     # Compute pixel colors.
     start = time()  # Take a time reference before.
 
+    subprocesses = args.subprocesses
     if subprocesses == 0:
 
         # Use current process for line rendering.
