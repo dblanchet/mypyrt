@@ -5,6 +5,7 @@
 # - Handle several lights
 # - Support various camera position and orientation
 # - Give color to lights
+# - Clean up code structure
 
 from __future__ import print_function
 
