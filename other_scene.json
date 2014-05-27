@@ -1,0 +1,33 @@
+{
+    "objects": [
+	{
+	    "type": "ReflectingSphere",
+	    "center": { "type": "Point", "x": 0.0, "y": 0.0, "z": 0.0},
+	    "radius": 3.0,
+	    "color": { "type": "Color", "red": 255, "green": 255, "blue": 0}
+	},
+	{
+	    "type": "Sphere",
+	    "center": { "type": "Point", "x": -1.0, "y": -2.0, "z": 2.0},
+	    "radius": 1.5,
+	    "color": { "type": "Color", "red": 255, "green": 0, "blue": 0}
+	},
+	{
+	    "type": "ReflectingSphere",
+	    "center": { "type": "Point", "x": -6.0, "y": 4.0, "z": -3.0},
+	    "radius": 3.0,
+	    "color": { "type": "Color", "red": 0, "green": 255, "blue": 128}
+	},
+	{
+	    "type": "Plane",
+	    "point": { "type": "Point", "x": 0.0, "y": -4.0, "z": 0.0},
+	    "normal": { "type": "Vector", "x": 0.0, "y": 1.0, "z": 0.0}
+	}
+    ],
+    "lights": [
+	{
+	    "type": "Light",
+	    "position": { "type": "Point", "x": -5.0, "y": 10.0, "z": 10.0}
+	}
+    ]
+}
