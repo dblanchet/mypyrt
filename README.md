@@ -5,6 +5,11 @@ Dependencies
 
 * pypng
 
+Screenshot
+----------
+
+![screenshot](result.png)
+
 License
 -------
 
