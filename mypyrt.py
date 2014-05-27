@@ -294,14 +294,10 @@ class Sphere(SceneObject):
 
     def intersect(self, line):
         # http://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
-        o = line.origin
-        l = line.direction
+        oc = line.origin - self.center
+        projection = line.direction * oc
 
-        c = self.center
         r = self.radius
-
-        oc = o - c
-        projection = l * oc
         discr = projection * projection - oc * oc + r * r
 
         if discr < 0:
