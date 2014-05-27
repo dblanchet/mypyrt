@@ -1,5 +1,29 @@
 Short Python program I wrote to learn the very basics of ray tracing.
 
+Consider using [pypy](http://pypy.org/) if you are not very patient.
+This software has been not written for fast rendering times.
+
+   ````
+   $ ./mypyrt.py -h
+   usage: mypyrt.py [-h] [-j [PROC_COUNT]] [-o FILENAME] [scene_file]
+
+   Dumb ray tracer, but hey, it's mine!
+
+   positional arguments:
+     scene_file       JSON scene description file (default scene if not found)
+
+   optional arguments:
+     -h, --help       show this help message and exit
+     -j [PROC_COUNT]  subprocess count limit (default: host CPU count)
+     -o FILENAME      PNG output filename (default: result.png)
+   ````
+
+Default rendering uses Python's `multiprocessing` to speedup rendering.
+
+Debugging is way easier with `-j 0` flag.
+
+Have fun!
+
 Dependencies
 ------------
 
