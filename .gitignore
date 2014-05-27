@@ -1,5 +1,5 @@
 *.sw*
 *.py[cdo]
 stats.txt
-result.png
+*.png
 pypy-env
