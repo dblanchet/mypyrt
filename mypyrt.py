@@ -621,10 +621,6 @@ camera = Camera(
         screen_size=Point(4.0, 3.0, 0))
 
 
-# Scene setup.
-EXTERNAL_SCENE_FILENAME = 'scene.json'
-
-
 class Scene:
 
     def __init__(self, objects, lights):
@@ -666,7 +662,7 @@ class Scene:
             lights, objects = Scene._parse_scene_setup(data, globals())
             print("Rendering scene from %s..." % filename)
 
-        except IOError:
+        except (IOError, TypeError):
             # Use default scene if not found.
             lights, objects = Scene.default_scene()
             print("Rendering default scene...")
@@ -716,7 +712,7 @@ class Scene:
 
         return lights, objects
 
-scene = Scene.load_scene(EXTERNAL_SCENE_FILENAME)
+scene = None
 
 
 # Image setup.
@@ -797,14 +793,24 @@ def main(argv=None):
 
     # Parse command-line.
     parser = argparse.ArgumentParser()
-    parser.add_argument('-j', '--subprocesses', help='Subprocess count limit',
-            type=int, default=None, nargs='?')
+    parser.description = "Dumb ray tracer, but hey, it's mine!"
+    parser.add_argument('-j', type=int, metavar='PROC_COUNT',
+            nargs='?', help='subprocess count limit (default: host CPU count)')
+    parser.add_argument('scene_file', nargs='?',
+            help='JSON scene description file (default scene if not found)')
+    parser.add_argument('-o', default='result.png', metavar='FILENAME',
+            help='PNG output filename (default: result.png)')
     args = parser.parse_args()
+
+    # Setup values according to command-line arguments.
+    subprocesses = args.j
+    png_file = args.o
+    global scene
+    scene = Scene.load_scene(args.scene_file)
 
     # Compute pixel colors.
     start = time()  # Take a time reference before.
 
-    subprocesses = args.subprocesses
     if subprocesses == 0:
 
         # Use current process for line rendering.
@@ -843,7 +849,7 @@ def main(argv=None):
             px_per_sec, px_per_sec // proc_count))
 
     # Write pixels to easily read file format.
-    with open('result.png', 'wb') as f:
+    with open(png_file, 'wb') as f:
         w = png.Writer(image_size.x, image_size.y)
         w.write(f, lines)
 
